@@ -19,7 +19,6 @@ public abstract class EntityAdapter implements IEntity {
      * 纵向对齐方式
      */
     protected VertAlign vertAlign;
-    protected EntityState state;
 
     @Override public double getLeft() {
         switch (horzAlign) {
@@ -115,13 +114,5 @@ public abstract class EntityAdapter implements IEntity {
      */
     @Override public double getImgOffsetY() {
         return getImgOffsetY(getImage().getHeight());
-    }
-
-    @Override public EntityState getState() {
-        return state;
-    }
-
-    @Override public void setState(EntityState state) {
-        this.state = state;
     }
 }

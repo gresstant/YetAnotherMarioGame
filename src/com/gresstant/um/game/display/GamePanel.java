@@ -2,6 +2,7 @@ package com.gresstant.um.game.display;
 
 import com.gresstant.um.game.Context;
 import com.gresstant.um.game.object.IEntity;
+import com.gresstant.um.game.object.Mario;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -11,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 public class GamePanel extends JPanel {
     /**
@@ -34,9 +36,14 @@ public class GamePanel extends JPanel {
     private Resource<BufferedImage> res;
     /**
      * 从上级传来的按键列表
-     * TODO 异步安全性质疑があるで、修正させていただきます。
+     * TODO 存在严重BUG，必须弃用
+     * @link pressedKeys
      */
-    public Queue<KeyEvent> keyQueue = new LinkedList<>();
+    @Deprecated public Queue<KeyEvent> keyQueue = new LinkedList<>();
+    /**
+     *
+     */
+    public boolean[] pressedKeys = new boolean[500];
 
     /*
      * 关卡相关
@@ -58,6 +65,7 @@ public class GamePanel extends JPanel {
      * 这部分实体应当处于冻结状态，不予更新
      */
     public LinkedList<IEntity> comingEntities;
+    public Mario player;
 
     public GamePanel(Context context, Resource<BufferedImage> res) {
         this.context = context;
@@ -119,11 +127,13 @@ public class GamePanel extends JPanel {
                     } else if (timeElapsed < 3000) { // 1.75s - 3s
                         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1 - (timeElapsed / 1000.0f - 1.75f) / 1.25f));
                     } else {
-                        // 切换状态前，需要重置 Graphics
-                        // TODO 这里应该有更好的解决方案
-//                        g.dispose();
-//                        g = screenBuffer.createGraphics();
-//                        g.setBackground(Color.WHITE);
+                        if (!context.imgResFuture.isDone()) break;
+                        try {
+                            context.imgRes = context.imgResFuture.get();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            System.exit(-1);
+                        }
                         setState(GameState.START_SCREEN);
                         break;
                     }
@@ -176,6 +186,7 @@ public class GamePanel extends JPanel {
                         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                     } else {
                         // TODO 需要设定游戏数据到上一个 checkpoint
+                        player = new Mario(context, 100, 100);
                         setState(GameState.IN_GAME);
                         break;
                     }
@@ -188,8 +199,8 @@ public class GamePanel extends JPanel {
                         g.dispose();
                         g = screenBuffer.createGraphics();
                         g.setBackground(Color.WHITE);
-                        g.clearRect(0, 0, getWidth(), getHeight());
                     }
+                    g.clearRect(0, 0, getWidth(), getHeight());
                     g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
                     g.drawImage(updateGame(), 0, 0, 800, 600, null);
                     frameElapsed++;
@@ -217,6 +228,7 @@ public class GamePanel extends JPanel {
                 // 电脑太慢了，无法满足帧率设定
             }
         }
+        System.out.println("loop ended ...");
     }
 
     public GameState getState() {
@@ -233,8 +245,23 @@ public class GamePanel extends JPanel {
      * @return 返回当前游戏的画面。尺寸应当为400*300。
      */
     private BufferedImage updateGame() {
-        // TODO
-        return null;
+        BufferedImage output = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = output.createGraphics();
+        while (!keyQueue.isEmpty()) {
+            KeyEvent event = keyQueue.poll();
+            switch (event.getKeyCode()) {
+                case KeyEvent.VK_RIGHT:
+                    player.acclerate(1.0);
+                    break;
+                case KeyEvent.VK_LEFT:
+                    player.acclerate(-1.0);
+                    break;
+            }
+        }
+        player.tick(context.TARGET_TPF);
+        g.clearRect(0, 0, getWidth(), getHeight());
+        g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()), (int) (player.getTop() + player.getImgOffsetY()), null);
+        return output;
     }
 
     @Override public void update(Graphics g) {

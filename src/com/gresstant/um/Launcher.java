@@ -15,8 +15,7 @@ public class Launcher {
     public static void main(String[] args) throws Exception {
         JFrame f = new JFrame();
         Context context = new Context();
-        ExecutorService exec = Executors.newFixedThreadPool(1); // 异步加载资源
-        context.imgResFuture = exec.submit(() -> Resource.loadImg(new File("res\\obj.png")));
+        context.imgResFuture = context.threadPool.submit(() -> Resource.loadImg(new File("res\\obj.png")));
         GamePanel game = new GamePanel(context, Resource.loadImg(new File("res\\obj.png")));
         f.setContentPane(game);
         f.setLocationByPlatform(true);
@@ -27,9 +26,11 @@ public class Launcher {
             @Override public void windowClosing(WindowEvent e) {
                 f.setTitle("EXITING ...");
                 context.exitCallback = f::dispose; // 这样可以保证游戏结束后再关闭窗口，避免 getGraphics 出错
+                context.threadPool.shutdown();
                 game.setState(GameState.EXITING);
             }
         });
+        // TODO 严重BUG！按键输入不及时
         f.addKeyListener(new KeyAdapter() {
             @Override public void keyPressed(KeyEvent e) {
                 game.keyQueue.offer(e);
