@@ -49,7 +49,7 @@ public abstract class EntityAdapter implements IEntity {
             case TOP:
                 return y;
             case BOTTOM:
-                return y + height;
+                return y - height;
             case CENTER:
                 return y - height / 2.0;
         }
@@ -59,7 +59,7 @@ public abstract class EntityAdapter implements IEntity {
     @Override public double getBottom() {
         switch (vertAlign) {
             case TOP:
-                return y - height;
+                return y + height;
             case BOTTOM:
                 return y;
             case CENTER:
