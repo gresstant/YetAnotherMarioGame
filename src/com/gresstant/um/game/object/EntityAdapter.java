@@ -32,6 +32,22 @@ public abstract class EntityAdapter implements IEntity {
         throw new RuntimeException();
     }
 
+    @Override public void setLeft(double val) {
+        switch (horzAlign) {
+            case LEFT:
+                x = val;
+                break;
+            case RIGHT:
+                x = val + width;
+                break;
+            case CENTER:
+                x = val + width / 2.0;
+                break;
+            default:
+                throw new RuntimeException();
+        }
+    }
+
     @Override public double getRight() {
         switch (horzAlign) {
             case LEFT:
@@ -42,6 +58,22 @@ public abstract class EntityAdapter implements IEntity {
                 return x + width / 2.0;
         }
         throw new RuntimeException();
+    }
+
+    @Override public void setRight(double val) {
+        switch (horzAlign) {
+            case LEFT:
+                x = val - width;
+                break;
+            case RIGHT:
+                x = val;
+                break;
+            case CENTER:
+                x = val - width / 2.0;
+                break;
+            default:
+                throw new RuntimeException();
+        }
     }
 
     @Override public double getTop() {
@@ -56,6 +88,22 @@ public abstract class EntityAdapter implements IEntity {
         throw new RuntimeException();
     }
 
+    @Override public void setTop(double val) {
+        switch (vertAlign) {
+            case TOP:
+                y = val;
+                break;
+            case BOTTOM:
+                y = val + height;
+                break;
+            case CENTER:
+                y = val + height / 2.0;
+                break;
+            default:
+                throw new RuntimeException();
+        }
+    }
+
     @Override public double getBottom() {
         switch (vertAlign) {
             case TOP:
@@ -66,6 +114,22 @@ public abstract class EntityAdapter implements IEntity {
                 return y + height / 2.0;
         }
         throw new RuntimeException();
+    }
+
+    @Override public void setBottom(double val) {
+        switch (vertAlign) {
+            case TOP:
+                y = val - height;
+                break;
+            case BOTTOM:
+                y = val;
+                break;
+            case CENTER:
+                y = val - height / 2.0;
+                break;
+            default:
+                throw new RuntimeException();
+        }
     }
 
     @Override public double getWidth() {

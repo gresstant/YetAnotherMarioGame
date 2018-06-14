@@ -1,8 +1,10 @@
 package com.gresstant.um.game.display;
 
 import com.gresstant.um.game.Context;
+import com.gresstant.um.game.object.Block;
 import com.gresstant.um.game.object.IEntity;
 import com.gresstant.um.game.object.Mario;
+import com.gresstant.um.game.object.Utilities;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -34,9 +36,14 @@ public class GamePanel extends JPanel {
      */
     private Resource<BufferedImage> res;
     /**
-     *
+     * 按键检测相关。
+     * 由父级写入数据。
      */
     public boolean[] pressedKeys = new boolean[500];
+    /**
+     * 游戏是否处于暂停状态
+     */
+    public boolean paused = false;
 
     /*
      * 关卡相关
@@ -52,7 +59,7 @@ public class GamePanel extends JPanel {
      * 舞台内的实体
      * 这部分实体应当正常更新
      */
-    public LinkedList<IEntity> onStageEntities;
+    public LinkedList<IEntity> onStageEntities = new LinkedList<>();
     /**
      * 舞台外、右侧的实体
      * 这部分实体应当处于冻结状态，不予更新
@@ -91,6 +98,10 @@ public class GamePanel extends JPanel {
 
         // 游戏主循环
         mainLoop: while (true) {
+            if (paused) {
+                try { Thread.sleep(100); } catch (Exception ignore) {}
+                continue mainLoop;
+            }
             beginTimestamp = System.currentTimeMillis(); // 记录本轮循环开始时的时间戳
             switch (state) {
                 case EXITING: {
@@ -105,6 +116,8 @@ public class GamePanel extends JPanel {
                 case LOGO_SPLASH: {
                     // 感觉这一部分可以包装成一个方法
                     if (frameElapsed == 0) { // 第一帧，用于初始化
+                        if (context.skipLogoSplash)
+                            frameElapsed += 100000;
                         g.dispose();
                         g = screenBuffer.createGraphics();
                         g.setBackground(Color.WHITE);
@@ -176,6 +189,9 @@ public class GamePanel extends JPanel {
                         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                     } else {
                         // TODO 需要设定游戏数据到上一个 checkpoint
+                        onStageEntities.clear();
+                        onStageEntities.add(new Block(context, 200, 60));
+                        onStageEntities.add(new Block(context, 250, 80));
                         player = new Mario(context, 100, 100);
                         setState(GameState.IN_GAME);
                         break;
@@ -237,13 +253,8 @@ public class GamePanel extends JPanel {
     private BufferedImage updateGame() {
         BufferedImage output = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = output.createGraphics();
+        g.clearRect(0, 0, getWidth(), getHeight());
 
-        // 假装碰撞检测
-        if (player.getBottom() > 100.0) {
-            player.supported = true;
-        } else {
-            player.supported = false;
-        }
 
         // 检查按键
         if (pressedKeys[KeyEvent.VK_RIGHT])
@@ -251,12 +262,153 @@ public class GamePanel extends JPanel {
         if (pressedKeys[KeyEvent.VK_LEFT])
             player.accelerate(-1.0);
         if (pressedKeys[KeyEvent.VK_Z])
-            player.tryJump(System.currentTimeMillis()); // TODO 这里以后可以考虑多级跳
+            player.tryJump(System.currentTimeMillis());
 
         player.run = pressedKeys[KeyEvent.VK_X];
 
+        // 计算出本帧玩家的大致位置
+        double displaceX = player.speedX * context.TARGET_TPF / 1000.0;
+        double displaceY = player.speedY * context.TARGET_TPF / 1000.0;
+        double nextL = player.getLeft() + displaceX;
+        double nextR = player.getRight() + displaceX;
+        double nextT = player.getTop() + displaceY;
+        double nextB = player.getBottom() + displaceY;
+        double nextVC = (nextL + nextR) / 2.0;
+        double nextHC = (nextT + nextB) / 2.0;
+        double playerRatio = player.getHeight() / player.getWidth();
+
+        // 真·碰撞检测，顺便把实体画出来
+        player.bottomSupported = false;
+        if (player.getBottom() > 100.0) { // 空气地
+            player.bottomSupported = true;
+        }
+        for (IEntity entity : onStageEntities) {
+            if (Utilities.collide(player, entity, player.speedX, player.speedY,  context.TARGET_TPF)) {
+                // 后面要用很多遍，所以先放到这里
+                double eL = entity.getLeft(), eR = entity.getRight();
+                double eT = entity.getTop(), eB = entity.getBottom();
+                int direction; // 0 for ->, 1 for <-, 2 for ^, 3 for v, 4 for unknown
+                //  **********
+                //  *1\* 2*/3*
+                //  **********
+                //  *4 * 5* 6* (5 will be ignored)
+                //  **********
+                //  *7/* 8*\9*
+                //  **********
+                if (eT - nextHC > 0) { // 1, 2, 3
+                    if (eL - nextVC > 0) { // 1
+                        // ****
+                        // *\v*
+                        // *>\*
+                        // ****
+                        if ((eT - nextHC) / (eL - nextVC) < playerRatio) {
+                            direction = 0; // >
+                        } else {
+                            direction = 3; // v
+                        }
+                    } else if (nextVC - eR > 0) { // 3
+                        // ****
+                        // *v/*
+                        // */<*
+                        // ****
+                        if ((eT - nextHC) / (nextVC - eR) < playerRatio) {
+                            direction = 1; // <
+                        } else {
+                            direction = 3; // v
+                        }
+                    } else { // 2
+                        direction = 3; // v
+                    }
+                } else if (nextHC - eB > 0) { // 7, 8, 9
+                    if (eL - nextVC > 0) { // 7
+                        // ****
+                        // *>/*
+                        // */^*
+                        // ****
+                        if ((nextHC - eB) / (eL - nextVC) < playerRatio) {
+                            direction = 0; // >
+                        } else {
+                            direction = 2; // ^
+                        }
+                    } else if (nextVC - eR > 0) { // 9
+                        // ****
+                        // *\<*
+                        // *^\*
+                        // ****
+                        if ((nextHC - eB) / (nextVC - eR) < playerRatio) {
+                            direction = 1; // <
+                        } else {
+                            direction = 2; // ^
+                        }
+                    } else { // 8
+                        direction = 2; // ^
+                    }
+                } else if (eL - nextVC > 0) { // 4
+                    direction = 0; // >
+                } else if (nextVC - eR > 0) { // 6
+                    direction = 1; // <
+                } else { // 5
+                    System.out.println("impossible");
+                    direction = 4;
+                }
+                System.out.println("direction: " + direction);
+                switch (direction) { // 0 for ->, 1 for <-, 2 for ^, 3 for v, 4 for unknown
+                    case 0:
+                        player.setRight(eL - 1);
+                        player.speedX = 0;
+                        player.accX = 0;
+                        break;
+                    case 1:
+                        player.setLeft(eR + 1);
+                        player.speedX = 0;
+                        player.accX = 0;
+                        break;
+                    case 2:
+                        player.speedY = -Math.min(player.speedY, context.maxFallSpeed);
+                        player.setTop(eB + 1);
+                        break;
+                    case 3:
+                        player.bottomSupported = true;
+                        player.setBottom(eT - 1);
+                        break;
+                }
+//                } else if (nextVC >= eL) {
+//                    player.setRight(eL - 1);
+//                    player.speedX = 0;
+//                    player.accX = 0;
+//                } else if (nextVC <= eR) {
+//                    player.setLeft(eR + 1);
+//                    player.speedX = 0;
+//                    player.accX = 0;
+//                } else if (nextHC <= eB) {
+//                    player.setTop(eB + 1);
+//                    player.speedY = 0;
+//                }
+            }
+            g.drawImage(entity.getImage(), (int) (entity.getLeft() + entity.getImgOffsetX()), (int) (entity.getTop() + entity.getImgOffsetY()), null);
+        }
+
+        // 一切有效信息就绪后，命令 Mario 跳帧
         player.tick(context.TARGET_TPF);
-        g.clearRect(0, 0, getWidth(), getHeight());
+
+        // TODO 把右边的对象放到画面 list 中
+        // TODO 把移出画面的对象移出 list
+
+
+        // TODO 实装碰撞检测后，删除这一部分
+        g.setColor(Color.YELLOW);
+        g.drawLine(0, 100, 400, 100);
+        g.setColor(Color.WHITE);
+        g.drawLine((int) player.getLeft(), 0, (int) player.getLeft(), 300);
+        g.drawLine(0, (int) player.getTop(), 400, (int) player.getTop());
+        g.drawLine((int) player.getRight(), 0, (int) player.getRight(), 300);
+        g.drawLine(0, (int) player.getBottom(), 400, (int) player.getBottom());
+        g.setColor(Color.MAGENTA);
+        g.drawString("Top: " + player.getTop(), 0, (int) player.getTop());
+        g.drawString("Bottom: " + player.getBottom(), 0, (int) player.getBottom());
+        g.drawString("Left: " + player.getLeft(), (int) player.getLeft(), 280);
+        g.drawString("Right: " + player.getRight(), (int) player.getRight(), 300);
+
         g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()), (int) (player.getTop() + player.getImgOffsetY()), null);
         return output;
     }

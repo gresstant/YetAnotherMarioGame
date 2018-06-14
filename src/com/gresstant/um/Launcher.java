@@ -39,6 +39,15 @@ public class Launcher {
                 if (e.getKeyCode() <= 0xFF) game.pressedKeys[e.getKeyCode()] = false;
             }
         });
+        f.addFocusListener(new FocusListener() {
+            @Override public void focusGained(FocusEvent e) {
+                game.paused = false;
+            }
+
+            @Override public void focusLost(FocusEvent e) {
+                game.paused = true;
+            }
+        });
         f.pack();
         game.start();
     }

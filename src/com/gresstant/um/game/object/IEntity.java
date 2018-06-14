@@ -7,6 +7,10 @@ public interface IEntity {
     double getRight();
     double getTop();
     double getBottom();
+    void setLeft(double val);
+    void setRight(double val);
+    void setTop(double val);
+    void setBottom(double val);
     double getWidth();
     double getHeight();
     EntityState getState();

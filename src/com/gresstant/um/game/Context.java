@@ -54,5 +54,10 @@ public class Context {
     /**
      * 马里奥的基准摩擦力
      */
-    public double marioFraction = 32.0;
+    public double marioFraction = 128.0;
+
+    /**
+     * 是否跳过 logo splash
+     */
+    public boolean skipLogoSplash = true;
 }

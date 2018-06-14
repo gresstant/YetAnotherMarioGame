@@ -30,7 +30,7 @@ public class Mario extends EntityAdapter {
      * 马里奥的脚下是否有东西做支撑
      * 针对此变量的一切赋值操作应当交由 GamePanel 完成。
      */
-    public boolean supported = true;
+    public boolean bottomSupported = true;
 
     public Mario(Context context, double x, double y) {
         this.context = context;
@@ -78,35 +78,32 @@ public class Mario extends EntityAdapter {
         // s=V0t+(at^2)/2
         double second = ms / 1000.0;
 
+        double oldSpeedX = speedX;
+
         // 根据横向加速度调整速度和位置
-        if (Math.abs(speedX) < (run ? context.marioMaxRunSpeed : context.marioMaxWalkSpeed)) {
-            x += speedX * second + accX * second * second / 2.0;
+        if (Math.abs(speedX) < (run ? context.marioMaxRunSpeed : context.marioMaxWalkSpeed)) { // 速度小于最大速度
             speedX += accX * second;
-        } else if (state != EntityState.JUMP && Math.signum(speedX) != Math.signum(accX)) {
+        } else if (state != EntityState.JUMP && turning) { // 没在跳，且在转身
             // 转身时八倍加速度
-            x += speedX * second + 4 * accX * second * second;
             speedX += 8 * accX * second;
-        } else {
-            x += speedX * second;
-            // 现在改为利用摩擦降回最高速度
-//            speedX = Math.signum(speedX) * context.marioMaxWalkSpeed;
+        } else if (Math.abs(speedX) >= (run ? context.marioMaxRunSpeed : context.marioMaxWalkSpeed) &&
+                Math.signum(speedX) == Math.signum(accX)) { // 已是最大速度且同向
+            accX = 0.0;
         }
 
         // 摩擦力
-        if (state == EntityState.RUN) {
+        if (state == EntityState.RUN & accX == 0.0) { // 飞行或站立时没有摩擦
             accX = -Math.signum(speedX) * context.marioFraction; // TODO 这里以后应当乘以一个 ratio
-            if (Math.abs(speedX) - Math.abs(accX * second) < 0.0) {
+            speedX += accX * second;
+            if (Math.abs(speedX) - Math.abs(context.marioFraction * second) < 0.0) { // 如果摩擦加速度大到能够使得马里奥转向
                 accX = 0.0;
                 speedX = 0.0;
             }
-        } else {
-            // 飞行或站立时没有摩擦
-            accX = 0.0;
         }
 
         // 重力下落，当然要保证不超过最大下落速度
         double oldSpeedY = speedY;
-        if (!supported) {
+        if (!bottomSupported) {
             speedY += context.gravity * second;
             if (speedY > context.maxFallSpeed)
                 speedY = context.maxFallSpeed;
@@ -114,11 +111,15 @@ public class Mario extends EntityAdapter {
             speedY = Math.min(0.0, speedY);
         }
 
-        // 要保证在地上能跳起来
+        // 更新位置
+        x += (oldSpeedX + speedX) * second / 2.0;
         y += (oldSpeedY + speedY) * second / 2.0;
 
+        // 重置加速度
+        accX = 0.0;
+
         // 更新状态
-        if (!supported /*|| Math.abs(speedY) < 0.001*/) { // 脚下悬空即判定为跳跃
+        if (!bottomSupported /*|| Math.abs(speedY) < 0.001*/) { // 脚下悬空即判定为跳跃
             state = EntityState.JUMP;
         } else if (Math.abs(speedX) < 0.001) { // 针对浮点数，判断 speedX == 0
             state = EntityState.STAND;
@@ -146,13 +147,11 @@ public class Mario extends EntityAdapter {
      * 马里奥会根据调用时的状态判断现在能不能跳，所以请在碰撞检测完毕后再调用
      */
     public void tryJump(long timestamp) {
-        if (supported) {
+        if (bottomSupported) {
             speedY = -192.0;
             lastJumpTimestamp = timestamp;
-        } else if (timestamp - lastJumpTimestamp > 100 && state == EntityState.JUMP) {
-            System.out.println("ljt=" + lastJumpTimestamp + "\tt=" + timestamp);
-            speedY = -256.0;
-            lastJumpTimestamp = Long.MAX_VALUE;
+        } else if (timestamp - lastJumpTimestamp <= 100 && state == EntityState.JUMP) {
+            speedY = -192.0;
         }
     }
 
