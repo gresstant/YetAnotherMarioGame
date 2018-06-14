@@ -82,10 +82,10 @@ public class Mario extends EntityAdapter {
         if (Math.abs(speedX) < (run ? context.marioMaxRunSpeed : context.marioMaxWalkSpeed)) {
             x += speedX * second + accX * second * second / 2.0;
             speedX += accX * second;
-        } else if (Math.signum(speedX) != Math.signum(accX)) {
-            // 转身时六倍加速度
-            x += speedX * second + 3 * accX * second * second;
-            speedX += 6 * accX * second;
+        } else if (state != EntityState.JUMP && Math.signum(speedX) != Math.signum(accX)) {
+            // 转身时八倍加速度
+            x += speedX * second + 4 * accX * second * second;
+            speedX += 8 * accX * second;
         } else {
             x += speedX * second;
             // 现在改为利用摩擦降回最高速度
@@ -130,20 +130,30 @@ public class Mario extends EntityAdapter {
     public void accelerate(double ratio) {
         accX = ratio * context.marioAcclerate;
         if (run) accX *= 1.5;
-        if (accX > +0.0)
-            faceRight = true;
-        else if (accX < -0.0)
-            faceRight = false;
+        if (state != EntityState.JUMP) { // 跳跃时不会转向
+            if (accX > +0.0) {
+                faceRight = true;
+            } else if (accX < -0.0) {
+                faceRight = false;
+            }
+        }
         turning = Math.signum(speedX) != Math.signum(accX);
     }
 
+    private long lastJumpTimestamp;
     /**
      * 让马里奥跳起来
      * 马里奥会根据调用时的状态判断现在能不能跳，所以请在碰撞检测完毕后再调用
      */
     public void tryJump(long timestamp) {
-        if (supported)
+        if (supported) {
             speedY = -192.0;
+            lastJumpTimestamp = timestamp;
+        } else if (timestamp - lastJumpTimestamp > 100 && state == EntityState.JUMP) {
+            System.out.println("ljt=" + lastJumpTimestamp + "\tt=" + timestamp);
+            speedY = -256.0;
+            lastJumpTimestamp = Long.MAX_VALUE;
+        }
     }
 
     @Override public void setState(EntityState state) {
