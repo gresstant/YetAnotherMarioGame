@@ -30,10 +30,13 @@ public class Launcher {
                 game.setState(GameState.EXITING);
             }
         });
-        // TODO 严重BUG！按键输入不及时
         f.addKeyListener(new KeyAdapter() {
             @Override public void keyPressed(KeyEvent e) {
-                game.keyQueue.offer(e);
+                if (e.getKeyCode() <= 0xFF) game.pressedKeys[e.getKeyCode()] = true;
+            }
+
+            @Override public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() <= 0xFF) game.pressedKeys[e.getKeyCode()] = false;
             }
         });
         f.pack();

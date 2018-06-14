@@ -12,7 +12,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 public class GamePanel extends JPanel {
     /**
@@ -34,12 +33,6 @@ public class GamePanel extends JPanel {
      * 图像资源库。完成异步加载功能后应当删除此变量。
      */
     private Resource<BufferedImage> res;
-    /**
-     * 从上级传来的按键列表
-     * TODO 存在严重BUG，必须弃用
-     * @link pressedKeys
-     */
-    @Deprecated public Queue<KeyEvent> keyQueue = new LinkedList<>();
     /**
      *
      */
@@ -146,18 +139,15 @@ public class GamePanel extends JPanel {
                         g.dispose();
                         g = screenBuffer.createGraphics();
                         g.setBackground(Color.WHITE);
-                        keyQueue.clear();
                         frameElapsed++;
                     }
 
                     g.clearRect(0, 0, getWidth(), getHeight());
                     //updateGame();
                     g.setColor(Color.BLACK);
-                    while (!keyQueue.isEmpty()) {
-                        if (keyQueue.poll().getKeyCode() == KeyEvent.VK_ENTER) {
-                            // TODO 这里需要初始化游戏
-                            setState(GameState.LIFE_SPLASH);
-                        }
+                    if (pressedKeys[KeyEvent.VK_ENTER]) {
+                        // TODO 这里需要初始化游戏
+                        setState(GameState.LIFE_SPLASH);
                     }
                     g.setFont(new Font(g.getFont().getName(), Font.PLAIN, 48));
                     g.drawString("Press Enter to start!", 0, 600);
@@ -247,17 +237,24 @@ public class GamePanel extends JPanel {
     private BufferedImage updateGame() {
         BufferedImage output = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = output.createGraphics();
-        while (!keyQueue.isEmpty()) {
-            KeyEvent event = keyQueue.poll();
-            switch (event.getKeyCode()) {
-                case KeyEvent.VK_RIGHT:
-                    player.acclerate(1.0);
-                    break;
-                case KeyEvent.VK_LEFT:
-                    player.acclerate(-1.0);
-                    break;
-            }
+
+        // 假装碰撞检测
+        if (player.getBottom() > 100.0) {
+            player.supported = true;
+        } else {
+            player.supported = false;
         }
+
+        // 检查按键
+        if (pressedKeys[KeyEvent.VK_RIGHT])
+            player.accelerate(1.0);
+        if (pressedKeys[KeyEvent.VK_LEFT])
+            player.accelerate(-1.0);
+        if (pressedKeys[KeyEvent.VK_Z])
+            player.tryJump(System.currentTimeMillis()); // TODO 这里以后可以考虑多级跳
+
+        player.run = pressedKeys[KeyEvent.VK_X];
+
         player.tick(context.TARGET_TPF);
         g.clearRect(0, 0, getWidth(), getHeight());
         g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()), (int) (player.getTop() + player.getImgOffsetY()), null);
