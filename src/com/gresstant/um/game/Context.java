@@ -39,7 +39,7 @@ public class Context {
     /**
      * 马里奥的加速度
      */
-    public double marioAcclerate = 64.0;
+    public double marioAcclerate = 128.0;
 
     /**
      * 马里奥的走路最快速度

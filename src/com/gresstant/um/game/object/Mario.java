@@ -3,7 +3,6 @@ package com.gresstant.um.game.object;
 import com.gresstant.um.game.Context;
 
 import java.awt.image.BufferedImage;
-import java.util.Map;
 
 public class Mario extends EntityAdapter {
     private Context context;
@@ -278,5 +277,21 @@ public class Mario extends EntityAdapter {
 
     @Override public void dispose() {
         setState(EntityState.DISPOSED);
+    }
+
+    @Override public boolean collideUpwards(boolean[] keyArray, Mario player) {
+        throw new RuntimeException("can't collide itself!");
+    }
+
+    @Override public boolean collideDownwards(boolean[] keyArray, Mario player) {
+        throw new RuntimeException("can't collide itself!");
+    }
+
+    @Override public boolean collideLeftwards(boolean[] keyArray, Mario player) {
+        throw new RuntimeException("can't collide itself!");
+    }
+
+    @Override public boolean collideRightwards(boolean[] keyArray, Mario player) {
+        throw new RuntimeException("can't collide itself!");
     }
 }

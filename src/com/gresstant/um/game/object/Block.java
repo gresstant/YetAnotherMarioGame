@@ -10,8 +10,6 @@ public class Block extends BlockAdapter {
     Context context;
     EntityState state = EntityState.STILL;
 
-    public boolean fragile = true;
-
     public Block(Context context, double x, double y) {
         this.context = context;
         this.x = x;
@@ -35,6 +33,12 @@ public class Block extends BlockAdapter {
 
     private BufferedImage imgBuffer;
     @Override public BufferedImage getImage() {
-        return imgBuffer;
+        return getState() == EntityState.STILL ? imgBuffer : null;
+    }
+
+    @Override public boolean collideUpwards(boolean[] keyArray, Mario player) {
+        if (player.getGrowth() != Mario.GrowthState.SMALL)
+            die(System.currentTimeMillis(), null);
+        return true;
     }
 }

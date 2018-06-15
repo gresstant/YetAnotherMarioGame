@@ -63,6 +63,10 @@ public class GamePanel extends JPanel {
      * 这部分实体应当处于冻结状态，不予更新
      */
     public LinkedList<IEntity> comingEntities = new LinkedList<>();
+    /**
+     * 当前舞台的最左侧
+     */
+    public int stageX = 0;
     public Mario player;
     public int playerLife = 3;
 
@@ -195,8 +199,15 @@ public class GamePanel extends JPanel {
                         onStageEntities.add(new Block(context, 200, 60));
                         onStageEntities.add(new Block(context, 216, 60));
                         onStageEntities.add(new Block(context, 250, 80));
-                        player = new Mario(context, 100, 100);
+                        onStageEntities.add(new Block(context, 184, 150));
+                        onStageEntities.add(new Block(context, 200, 150));
+                        onStageEntities.add(new Block(context, 216, 150));
+                        onStageEntities.add(new Block(context, 232, 150));
+                        onStageEntities.add(new Block(context, 248, 150));
+                        onStageEntities.add(new Block(context, 264, 150));
+                        player = new Mario(context, 100, 99);
                         player.activate();
+                        player.setGrowth(Mario.GrowthState.BIG);
                         setState(GameState.IN_GAME);
                         break;
                     }
@@ -272,7 +283,7 @@ public class GamePanel extends JPanel {
                     setState(GameState.LIFE_SPLASH);
                 });
             }
-            // 检查按键
+            // 检查移动+跳跃按键
             if (pressedKeys[KeyEvent.VK_RIGHT])
                 player.accelerate(1.0);
             if (pressedKeys[KeyEvent.VK_LEFT])
@@ -284,8 +295,14 @@ public class GamePanel extends JPanel {
         }
 
         // 计算出本帧玩家的大致位置
-        double nextVC = (player.getLeft() + player.getRight()) / 2.0;
-        double nextHC = (player.getTop() + player.getBottom()) / 2.0;
+        double displaceX = player.speedX * context.TARGET_TPF / 1000.0;
+        double displaceY = player.speedY * context.TARGET_TPF / 1000.0;
+        double nextL = player.getLeft() + displaceX;
+        double nextR = player.getRight() + displaceX;
+        double nextT = player.getTop() + displaceY;
+        double nextB = player.getBottom() + displaceY;
+        double nextVC = (nextL + nextR) / 2.0;
+        double nextHC = (nextT + nextB) / 2.0;
         double playerRatio = player.getHeight() / player.getWidth();
 
         // 真·碰撞检测，顺便把实体画出来
@@ -360,33 +377,43 @@ public class GamePanel extends JPanel {
                 } else if (nextVC - eR > 0) { // 6
                     direction = Direction.LEFTWARDS; // <
                 } else { // 5
-                    System.out.println("impossible");
+//                    System.out.println("impossible");
                     direction = null;
                 }
                 //endregion
                 if (direction != null) switch (direction) {
                     case RIGHTWARDS:
-                        player.setRight(eL - 0.01);
-                        player.speedX = 0;
-                        player.accX = 0;
+                        if (player.speedX >= 0 && entity.collideRightwards(pressedKeys, player)) {
+                            player.setRight(eL - 0.01);
+                            player.speedX = 0;
+                            player.accX = 0;
+                        }
                         break;
                     case LEFTWARDS:
-                        player.setLeft(eR + 0.01);
-                        player.speedX = 0;
-                        player.accX = 0;
+                        if (player.speedX <= 0 && entity.collideLeftwards(pressedKeys, player)) {
+                            player.setLeft(eR + 0.01);
+                            player.speedX = 0;
+                            player.accX = 0;
+                        }
                         break;
                     case UPWARDS:
-                        player.topSupported = true;
-                        player.speedY = Math.min(Math.abs(player.speedY), context.maxFallSpeed);
-                        player.setTop(eB + 0.01);
+                        if (player.speedY <= 0 && entity.collideUpwards(pressedKeys, player)) {
+                            player.topSupported = true;
+                            player.speedY = Math.min(Math.abs(player.speedY), context.maxFallSpeed);
+                            player.setTop(eB + 0.01);
+                        }
                         break;
                     case DOWNWARDS:
-                        player.bottomSupported = true;
-                        player.setBottom(eT + 0.01);
+                        if (player.speedY >= 0 && entity.collideDownwards(pressedKeys, player)) {
+                            player.bottomSupported = true;
+                            player.setBottom(eT + 0.01);
+                        }
                         break;
                 }
             }
-            g.drawImage(entity.getImage(), (int) (entity.getLeft() + entity.getImgOffsetX()), (int) (entity.getTop() + entity.getImgOffsetY()), null);
+            BufferedImage eImg = entity.getImage();
+            if (eImg != null)
+                g.drawImage(eImg, (int) (entity.getLeft() + entity.getImgOffsetX()), (int) (entity.getTop() + entity.getImgOffsetY()), null);
         }
 
         // 一切有效信息就绪后，命令 Mario 跳帧
