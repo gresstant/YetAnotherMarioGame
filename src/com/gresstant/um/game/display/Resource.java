@@ -32,10 +32,10 @@ public class Resource<T> implements IResource<T> {
         output.storage.put("MARIO$LARGE$STAND", new BufferedImage[] {img.getSubimage(48, 548, 16, 32)});
         output.storage.put("MARIO$LARGE$SQUAT", new BufferedImage[] {img.getSubimage(23, 548, 16, 32)});
         output.storage.put("MARIO$LARGE$TURN", new BufferedImage[] {img.getSubimage(71, 548, 16, 32)});
-        output.storage.put("MARIO$LARGE$WALK", new BufferedImage[] {img.getSubimage(91, 547, 16, 32),
-                img.getSubimage(113, 546, 16, 32),
-                img.getSubimage(139, 546, 16, 32),
-                img.getSubimage(113, 546, 16, 32)});
+        output.storage.put("MARIO$LARGE$WALK", new BufferedImage[] {img.getSubimage(94, 548, 16, 32),
+                img.getSubimage(115, 549, 16, 32),
+                img.getSubimage(139, 549, 16, 32),
+                img.getSubimage(115, 549, 16, 32)});
         output.storage.put("MARIO$LARGE$JUMP", new BufferedImage[] {img.getSubimage(167, 545, 16, 32)});
 
         // 马里奥（火球）
