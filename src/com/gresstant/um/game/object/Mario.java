@@ -23,23 +23,62 @@ public class Mario extends EntityAdapter {
     public boolean turning = false;
     /**
      * 是否在跑。
-     * 针对此变量的一切赋值操作应当交由 GamePanel 完成。
+     * 针对此变量的赋 true 值操作应当交由 GamePanel 完成。
      */
     public boolean run = false;
     /**
-     * 马里奥的脚下是否有东西做支撑
-     * 针对此变量的一切赋值操作应当交由 GamePanel 完成。
+     * 马里奥的形态。
      */
-    public boolean bottomSupported = true;
+    private GrowthState growth = GrowthState.SMALL;
+    /**
+     * 是否在蹲。
+     * 针对此变量的赋 true 值操作应当交由 GamePanel 完成。
+     */
+    public boolean squating = false;
+    /**
+     * 马里奥的脚下是否有东西做支撑
+     * 针对此变量的赋 true 值操作应当交由 GamePanel 完成。
+     */
+    public boolean bottomSupported = false;
+    /**
+     * 马里奥的头顶是否右东西挡住
+     * 针对此变量的赋 true 值操作应当交由 GamePanel 完成。
+     */
+    public boolean topSupported = false;
+
+    public enum GrowthState {
+        SMALL,
+        BIG,
+        BULLET
+    }
 
     public Mario(Context context, double x, double y) {
         this.context = context;
         this.x = x;
         this.y = y;
-        width = 16.0;
-        height = 16.0;
+        setGrowth(GrowthState.SMALL);
         horzAlign = HorzAlign.CENTER;
         vertAlign = VertAlign.BOTTOM;
+    }
+
+    public GrowthState getGrowth() {
+        return growth;
+    }
+
+    public void setGrowth(GrowthState growth) {
+        this.growth = growth;
+        switch (growth) {
+            case SMALL:
+                width = 16.0;
+                height = 16.0;
+                break;
+            case BIG:
+                width = 16.0;
+                height = 32.0;
+                break;
+            default:
+                throw new RuntimeException("not implemented");
+        }
     }
 
     private String resBufferKey = "";
@@ -115,9 +154,6 @@ public class Mario extends EntityAdapter {
         x += (oldSpeedX + speedX) * second / 2.0;
         y += (oldSpeedY + speedY) * second / 2.0;
 
-        // 重置加速度
-        accX = 0.0;
-
         // 更新状态
         if (!bottomSupported /*|| Math.abs(speedY) < 0.001*/) { // 脚下悬空即判定为跳跃
             state = EntityState.JUMP;
@@ -126,6 +162,11 @@ public class Mario extends EntityAdapter {
         } else {
             state = EntityState.RUN;
         }
+
+        // 重置
+        accX = 0.0;
+        bottomSupported = false;
+        topSupported = false;
     }
 
     public void accelerate(double ratio) {
@@ -147,6 +188,7 @@ public class Mario extends EntityAdapter {
      * 马里奥会根据调用时的状态判断现在能不能跳，所以请在碰撞检测完毕后再调用
      */
     public void tryJump(long timestamp) {
+        if (topSupported) return;
         if (bottomSupported) {
             speedY = -192.0;
             lastJumpTimestamp = timestamp;

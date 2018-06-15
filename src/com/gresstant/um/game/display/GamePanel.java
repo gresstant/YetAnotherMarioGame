@@ -1,10 +1,7 @@
 package com.gresstant.um.game.display;
 
 import com.gresstant.um.game.Context;
-import com.gresstant.um.game.object.Block;
-import com.gresstant.um.game.object.IEntity;
-import com.gresstant.um.game.object.Mario;
-import com.gresstant.um.game.object.Utilities;
+import com.gresstant.um.game.object.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -14,6 +11,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 
 public class GamePanel extends JPanel {
     /**
@@ -191,6 +189,7 @@ public class GamePanel extends JPanel {
                         // TODO 需要设定游戏数据到上一个 checkpoint
                         onStageEntities.clear();
                         onStageEntities.add(new Block(context, 200, 60));
+                        onStageEntities.add(new Block(context, 216, 60));
                         onStageEntities.add(new Block(context, 250, 80));
                         player = new Mario(context, 100, 100);
                         setState(GameState.IN_GAME);
@@ -255,6 +254,8 @@ public class GamePanel extends JPanel {
         Graphics2D g = output.createGraphics();
         g.clearRect(0, 0, getWidth(), getHeight());
 
+        List<Runnable> invokeLater = new LinkedList<>();
+        long timestamp = System.currentTimeMillis();
 
         // 检查按键
         if (pressedKeys[KeyEvent.VK_RIGHT])
@@ -262,23 +263,22 @@ public class GamePanel extends JPanel {
         if (pressedKeys[KeyEvent.VK_LEFT])
             player.accelerate(-1.0);
         if (pressedKeys[KeyEvent.VK_Z])
-            player.tryJump(System.currentTimeMillis());
+            invokeLater.add(() -> player.tryJump(timestamp));
 
         player.run = pressedKeys[KeyEvent.VK_X];
 
         // 计算出本帧玩家的大致位置
         double displaceX = player.speedX * context.TARGET_TPF / 1000.0;
         double displaceY = player.speedY * context.TARGET_TPF / 1000.0;
-        double nextL = player.getLeft() + displaceX;
-        double nextR = player.getRight() + displaceX;
-        double nextT = player.getTop() + displaceY;
-        double nextB = player.getBottom() + displaceY;
-        double nextVC = (nextL + nextR) / 2.0;
-        double nextHC = (nextT + nextB) / 2.0;
+//        double nextL = player.getLeft() + displaceX;
+//        double nextR = player.getRight() + displaceX;
+//        double nextT = player.getTop() + displaceY;
+//        double nextB = player.getBottom() + displaceY;
+        double nextVC = (player.getLeft() + player.getRight()) / 2.0;
+        double nextHC = (player.getTop() + player.getBottom()) / 2.0;
         double playerRatio = player.getHeight() / player.getWidth();
 
         // 真·碰撞检测，顺便把实体画出来
-        player.bottomSupported = false;
         if (player.getBottom() > 100.0) { // 空气地
             player.bottomSupported = true;
         }
@@ -287,7 +287,7 @@ public class GamePanel extends JPanel {
                 // 后面要用很多遍，所以先放到这里
                 double eL = entity.getLeft(), eR = entity.getRight();
                 double eT = entity.getTop(), eB = entity.getBottom();
-                int direction; // 0 for ->, 1 for <-, 2 for ^, 3 for v, 4 for unknown
+                Direction direction; // 0 for ->, 1 for <-, 2 for ^, 3 for v, 4 for unknown
                 //  **********
                 //  *1\* 2*/3*
                 //  **********
@@ -302,9 +302,9 @@ public class GamePanel extends JPanel {
                         // *>\*
                         // ****
                         if ((eT - nextHC) / (eL - nextVC) < playerRatio) {
-                            direction = 0; // >
+                            direction = Direction.RIGHTWARDS; // >
                         } else {
-                            direction = 3; // v
+                            direction = Direction.DOWNWARDS; // v
                         }
                     } else if (nextVC - eR > 0) { // 3
                         // ****
@@ -312,12 +312,12 @@ public class GamePanel extends JPanel {
                         // */<*
                         // ****
                         if ((eT - nextHC) / (nextVC - eR) < playerRatio) {
-                            direction = 1; // <
+                            direction = Direction.LEFTWARDS; // <
                         } else {
-                            direction = 3; // v
+                            direction = Direction.DOWNWARDS; // v
                         }
                     } else { // 2
-                        direction = 3; // v
+                        direction = Direction.DOWNWARDS; // v
                     }
                 } else if (nextHC - eB > 0) { // 7, 8, 9
                     if (eL - nextVC > 0) { // 7
@@ -326,9 +326,9 @@ public class GamePanel extends JPanel {
                         // */^*
                         // ****
                         if ((nextHC - eB) / (eL - nextVC) < playerRatio) {
-                            direction = 0; // >
+                            direction = Direction.RIGHTWARDS; // >
                         } else {
-                            direction = 2; // ^
+                            direction = Direction.UPWARDS; // ^
                         }
                     } else if (nextVC - eR > 0) { // 9
                         // ****
@@ -336,59 +336,49 @@ public class GamePanel extends JPanel {
                         // *^\*
                         // ****
                         if ((nextHC - eB) / (nextVC - eR) < playerRatio) {
-                            direction = 1; // <
+                            direction = Direction.LEFTWARDS; // <
                         } else {
-                            direction = 2; // ^
+                            direction = Direction.UPWARDS; // ^
                         }
                     } else { // 8
-                        direction = 2; // ^
+                        direction = Direction.UPWARDS; // ^
                     }
                 } else if (eL - nextVC > 0) { // 4
-                    direction = 0; // >
+                    direction = Direction.RIGHTWARDS; // >
                 } else if (nextVC - eR > 0) { // 6
-                    direction = 1; // <
+                    direction = Direction.LEFTWARDS; // <
                 } else { // 5
                     System.out.println("impossible");
-                    direction = 4;
+                    direction = null;
                 }
-                System.out.println("direction: " + direction);
                 switch (direction) { // 0 for ->, 1 for <-, 2 for ^, 3 for v, 4 for unknown
-                    case 0:
-                        player.setRight(eL - 1);
+                    case RIGHTWARDS:
+                        player.setRight(eL - 0.01);
                         player.speedX = 0;
                         player.accX = 0;
                         break;
-                    case 1:
-                        player.setLeft(eR + 1);
+                    case LEFTWARDS:
+                        player.setLeft(eR + 0.01);
                         player.speedX = 0;
                         player.accX = 0;
                         break;
-                    case 2:
-                        player.speedY = -Math.min(player.speedY, context.maxFallSpeed);
-                        player.setTop(eB + 1);
+                    case UPWARDS:
+                        player.topSupported = true;
+                        player.speedY = Math.min(Math.abs(player.speedY), context.maxFallSpeed);
+                        player.setTop(eB + 0.01);
                         break;
-                    case 3:
+                    case DOWNWARDS:
                         player.bottomSupported = true;
-                        player.setBottom(eT - 1);
+                        player.setBottom(eT + 0.01);
                         break;
                 }
-//                } else if (nextVC >= eL) {
-//                    player.setRight(eL - 1);
-//                    player.speedX = 0;
-//                    player.accX = 0;
-//                } else if (nextVC <= eR) {
-//                    player.setLeft(eR + 1);
-//                    player.speedX = 0;
-//                    player.accX = 0;
-//                } else if (nextHC <= eB) {
-//                    player.setTop(eB + 1);
-//                    player.speedY = 0;
-//                }
             }
             g.drawImage(entity.getImage(), (int) (entity.getLeft() + entity.getImgOffsetX()), (int) (entity.getTop() + entity.getImgOffsetY()), null);
         }
 
         // 一切有效信息就绪后，命令 Mario 跳帧
+        for (Runnable r : invokeLater)
+            r.run(); // 在跳帧之前，先处理延迟的事务
         player.tick(context.TARGET_TPF);
 
         // TODO 把右边的对象放到画面 list 中

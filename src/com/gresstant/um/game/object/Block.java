@@ -10,6 +10,8 @@ public class Block extends BlockAdapter {
     Context context;
     EntityState state = EntityState.STAND;
 
+    public boolean fragile = true;
+
     public Block(Context context, double x, double y) {
         this.context = context;
         this.x = x;
