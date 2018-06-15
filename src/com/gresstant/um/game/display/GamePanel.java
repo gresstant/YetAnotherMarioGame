@@ -297,12 +297,8 @@ public class GamePanel extends JPanel {
         // 计算出本帧玩家的大致位置
         double displaceX = player.speedX * context.TARGET_TPF / 1000.0;
         double displaceY = player.speedY * context.TARGET_TPF / 1000.0;
-        double nextL = player.getLeft() + displaceX;
-        double nextR = player.getRight() + displaceX;
-        double nextT = player.getTop() + displaceY;
-        double nextB = player.getBottom() + displaceY;
-        double nextVC = (nextL + nextR) / 2.0;
-        double nextHC = (nextT + nextB) / 2.0;
+        double nextVC = player.getVertCenter() + displaceX;
+        double nextHC = player.getHorzCenter() + displaceY;
         double playerRatio = player.getHeight() / player.getWidth();
 
         // 真·碰撞检测，顺便把实体画出来

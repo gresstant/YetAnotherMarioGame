@@ -261,6 +261,7 @@ public class Mario extends EntityAdapter {
         dieTimestamp = timestamp;
         state = EntityState.DEAD;
         dieCallback = callback;
+        setGrowth(GrowthState.SMALL);
     }
 
     @Override public void setState(EntityState state) {
