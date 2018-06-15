@@ -51,6 +51,8 @@ public class Context {
      */
     public double marioMaxRunSpeed = 96.0;
 
+    public double marioJumpSpeed = -192.0;
+
     /**
      * 马里奥的基准摩擦力
      */

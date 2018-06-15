@@ -52,7 +52,7 @@ public class GamePanel extends JPanel {
      * 内存占用过多时，可以考虑删除这些实体
      * 但是如果没实力的话还是不要这样干比较好
      */
-    public LinkedList<IEntity> pastEntities;
+    public LinkedList<IEntity> pastEntities = new LinkedList<>();
     /**
      * 舞台内的实体
      * 这部分实体应当正常更新
@@ -62,8 +62,9 @@ public class GamePanel extends JPanel {
      * 舞台外、右侧的实体
      * 这部分实体应当处于冻结状态，不予更新
      */
-    public LinkedList<IEntity> comingEntities;
+    public LinkedList<IEntity> comingEntities = new LinkedList<>();
     public Mario player;
+    public int playerLife = 3;
 
     public GamePanel(Context context, Resource<BufferedImage> res) {
         this.context = context;
@@ -142,7 +143,7 @@ public class GamePanel extends JPanel {
                         break;
                     }
                     g.drawImage(splash, 0, 0, null);
-                    frameElapsed++;
+                    if (state == GameState.LOGO_SPLASH) frameElapsed++;
                     break;
                 }
                 case START_SCREEN: {
@@ -166,6 +167,7 @@ public class GamePanel extends JPanel {
                 }
                 case LIFE_SPLASH: {
                     if (frameElapsed == 0) { // 第一帧，用于初始化
+                        System.out.println("LIFE INIT");
                         g.dispose();
                         g = screenBuffer.createGraphics();
                         g.setBackground(Color.BLACK);
@@ -176,11 +178,12 @@ public class GamePanel extends JPanel {
                         gs.drawImage(res.getResource("MARIO$SMALL$STAND")[0], 160, 150 - 8, null);
                         gs.setFont(new Font(g.getFont().getName(), Font.PLAIN, 16));
                         gs.drawString("X", 190, 150 + 7);
-                        gs.drawString("3", 215, 150 + 7);
+                        gs.drawString(String.valueOf(playerLife), 215, 150 + 7);
 
                         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
                         g.drawImage(small, 0, 0, 800, 600, null);
                     }
+                    System.out.println("LIFE " + frameElapsed);
 
                     int timeElapsed = frameElapsed * context.TARGET_TPF; // 单位为毫秒
                     if (timeElapsed < 1000) { // 0s - 1s
@@ -188,15 +191,17 @@ public class GamePanel extends JPanel {
                     } else {
                         // TODO 需要设定游戏数据到上一个 checkpoint
                         onStageEntities.clear();
+                        onStageEntities.add(new Block(context, 100, 100));
                         onStageEntities.add(new Block(context, 200, 60));
                         onStageEntities.add(new Block(context, 216, 60));
                         onStageEntities.add(new Block(context, 250, 80));
                         player = new Mario(context, 100, 100);
+                        player.activate();
                         setState(GameState.IN_GAME);
                         break;
                     }
                     //g.drawImage(splash, 0, 0, null);
-                    frameElapsed++;
+                    if (state == GameState.LIFE_SPLASH) frameElapsed++;
                     break;
                 }
                 case IN_GAME: {
@@ -208,7 +213,7 @@ public class GamePanel extends JPanel {
                     g.clearRect(0, 0, getWidth(), getHeight());
                     g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
                     g.drawImage(updateGame(), 0, 0, 800, 600, null);
-                    frameElapsed++;
+                    if (state == GameState.IN_GAME) frameElapsed++;
                     break;
                 }
             }
@@ -241,6 +246,7 @@ public class GamePanel extends JPanel {
     }
 
     public void setState(GameState state) {
+        System.out.println("change to " + state);
         frameElapsed = 0;
         this.state = state;
     }
@@ -257,37 +263,43 @@ public class GamePanel extends JPanel {
         List<Runnable> invokeLater = new LinkedList<>();
         long timestamp = System.currentTimeMillis();
 
-        // 检查按键
-        if (pressedKeys[KeyEvent.VK_RIGHT])
-            player.accelerate(1.0);
-        if (pressedKeys[KeyEvent.VK_LEFT])
-            player.accelerate(-1.0);
-        if (pressedKeys[KeyEvent.VK_Z])
-            invokeLater.add(() -> player.tryJump(timestamp));
 
-        player.run = pressedKeys[KeyEvent.VK_X];
+        if (player.getState() != EntityState.DEAD && player.getState() != EntityState.DISPOSED) {
+            // 死亡判定 + 检查自杀按键
+            if (player.getTop() > 200.0 || pressedKeys[KeyEvent.VK_O]) {
+                player.die(timestamp, () -> {
+                    playerLife--;
+                    setState(GameState.LIFE_SPLASH);
+                });
+            }
+            // 检查按键
+            if (pressedKeys[KeyEvent.VK_RIGHT])
+                player.accelerate(1.0);
+            if (pressedKeys[KeyEvent.VK_LEFT])
+                player.accelerate(-1.0);
+            if (pressedKeys[KeyEvent.VK_Z])
+                invokeLater.add(() -> player.tryJump(timestamp));
+
+            player.run = pressedKeys[KeyEvent.VK_X];
+        }
 
         // 计算出本帧玩家的大致位置
-        double displaceX = player.speedX * context.TARGET_TPF / 1000.0;
-        double displaceY = player.speedY * context.TARGET_TPF / 1000.0;
-//        double nextL = player.getLeft() + displaceX;
-//        double nextR = player.getRight() + displaceX;
-//        double nextT = player.getTop() + displaceY;
-//        double nextB = player.getBottom() + displaceY;
         double nextVC = (player.getLeft() + player.getRight()) / 2.0;
         double nextHC = (player.getTop() + player.getBottom()) / 2.0;
         double playerRatio = player.getHeight() / player.getWidth();
 
         // 真·碰撞检测，顺便把实体画出来
-        if (player.getBottom() > 100.0) { // 空气地
-            player.bottomSupported = true;
-        }
         for (IEntity entity : onStageEntities) {
-            if (Utilities.collide(player, entity, player.speedX, player.speedY,  context.TARGET_TPF)) {
+            EntityState playerState = player.getState();
+            EntityState entityState = entity.getState();
+            if (!(playerState == EntityState.DEAD || playerState == EntityState.DISPOSED) &&
+                    !(entityState == EntityState.FROZEN || entityState == EntityState.DISPOSED || entityState == EntityState.DEAD) &&
+                    Utilities.collide(player, entity, player.speedX, player.speedY, context.TARGET_TPF)) {
                 // 后面要用很多遍，所以先放到这里
                 double eL = entity.getLeft(), eR = entity.getRight();
                 double eT = entity.getTop(), eB = entity.getBottom();
                 Direction direction; // 0 for ->, 1 for <-, 2 for ^, 3 for v, 4 for unknown
+                //region detect direction
                 //  **********
                 //  *1\* 2*/3*
                 //  **********
@@ -351,7 +363,8 @@ public class GamePanel extends JPanel {
                     System.out.println("impossible");
                     direction = null;
                 }
-                switch (direction) { // 0 for ->, 1 for <-, 2 for ^, 3 for v, 4 for unknown
+                //endregion
+                if (direction != null) switch (direction) {
                     case RIGHTWARDS:
                         player.setRight(eL - 0.01);
                         player.speedX = 0;
@@ -399,8 +412,14 @@ public class GamePanel extends JPanel {
         g.drawString("Left: " + player.getLeft(), (int) player.getLeft(), 280);
         g.drawString("Right: " + player.getRight(), (int) player.getRight(), 300);
 
-        g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()), (int) (player.getTop() + player.getImgOffsetY()), null);
+        if (player.getState() != EntityState.DISPOSED)
+            g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()), (int) (player.getTop() + player.getImgOffsetY()), null);
         return output;
+    }
+
+    public void playerDie() {
+        Runnable callback = () -> playerLife--;
+
     }
 
     @Override public void update(Graphics g) {

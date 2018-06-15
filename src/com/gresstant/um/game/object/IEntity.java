@@ -15,6 +15,8 @@ public interface IEntity {
     double getHeight();
     EntityState getState();
     void setState(EntityState state);
+    void activate();
+    void dispose();
 
     BufferedImage getImage();
 

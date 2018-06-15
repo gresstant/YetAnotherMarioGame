@@ -8,7 +8,7 @@ import java.awt.image.BufferedImage;
 
 public class Block extends BlockAdapter {
     Context context;
-    EntityState state = EntityState.STAND;
+    EntityState state = EntityState.STILL;
 
     public boolean fragile = true;
 

@@ -4,7 +4,8 @@ public enum EntityState {
     FROZEN,
     STILL,
     STAND,
-    SQUAT,
     RUN,
-    JUMP
+    JUMP,
+    DEAD,
+    DISPOSED
 }

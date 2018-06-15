@@ -3,6 +3,7 @@ package com.gresstant.um.game.object;
 import com.gresstant.um.game.Context;
 
 import java.awt.image.BufferedImage;
+import java.util.Map;
 
 public class Mario extends EntityAdapter {
     private Context context;
@@ -28,8 +29,13 @@ public class Mario extends EntityAdapter {
     public boolean run = false;
     /**
      * 马里奥的形态。
+     * 务必使用 setter 进行修改。
      */
     private GrowthState growth = GrowthState.SMALL;
+    /**
+     * 用于辅助 getImage 工作。
+     */
+    private String growthString = "SMALL";
     /**
      * 是否在蹲。
      * 针对此变量的赋 true 值操作应当交由 GamePanel 完成。
@@ -71,10 +77,12 @@ public class Mario extends EntityAdapter {
             case SMALL:
                 width = 16.0;
                 height = 16.0;
+                growthString = "SMALL";
                 break;
             case BIG:
                 width = 16.0;
                 height = 32.0;
+                growthString = "LARGE";
                 break;
             default:
                 throw new RuntimeException("not implemented");
@@ -100,19 +108,46 @@ public class Mario extends EntityAdapter {
     }
 
     @Override public BufferedImage getImage() {
-        if (state == EntityState.FROZEN || state == EntityState.STAND) {
-            return getResource("MARIO$SMALL$STAND", !faceRight)[0];
-        } else if (state == EntityState.RUN) {
-            if (turning) return getResource("MARIO$SMALL$TURN", !faceRight)[0];
-            return getResource("MARIO$SMALL$WALK", !faceRight)[Math.abs((int) x / 2 % 4)];
-        } else if (state == EntityState.JUMP) {
-            return getResource("MARIO$SMALL$JUMP", !faceRight)[0];
-        } else {
-            throw new RuntimeException();
+        switch (state) {
+            case FROZEN:
+            case DISPOSED:
+                return getResource("MARIO$" + growthString + "$STAND", false)[0];
+            case STAND:
+                if (squating) return getResource("MARIO$" + growthString + "$SQUAT", false)[0];
+                return getResource("MARIO$" + growthString + "$STAND", !faceRight)[0];
+            case RUN:
+                if (turning) return getResource("MARIO$" + growthString + "$TURN", !faceRight)[0];
+                return getResource("MARIO$" + growthString + "$WALK", !faceRight)[Math.abs((int) x / 2 % 4)];
+            case JUMP:
+                if (squating) return getResource("MARIO$" + growthString + "$SQUAT", false)[0];
+                return getResource("MARIO$" + growthString + "$JUMP", !faceRight)[0];
+            case DEAD:
+                return getResource("MARIO$SMALL$OVER", !faceRight)[0];
+            default:
+                throw new RuntimeException();
         }
     }
 
+    /**
+     * 通知实体进行换帧必需的运算
+     * @param ms 上一帧到这一帧所经过的时间，单位毫秒
+     */
     public void tick(int ms) {
+        switch (state) {
+            case JUMP: case RUN: case STAND:
+                tickAlive(ms);
+                break;
+            case FROZEN: case DISPOSED:
+                break; // do nothing
+            case DEAD:
+                tickDieAnimation();
+                break;
+            default:
+                throw new RuntimeException();
+        }
+    }
+
+    private void tickAlive(int ms) {
         // V=V0+at
         // s=V0t+(at^2)/2
         double second = ms / 1000.0;
@@ -169,6 +204,21 @@ public class Mario extends EntityAdapter {
         topSupported = false;
     }
 
+    private void tickDieAnimation() {
+        // assert dieTimestamp != 0;
+        long animeTimer = System.currentTimeMillis() - dieTimestamp;
+        if (animeTimer <= 1000) {
+            // do nothing
+        } else if (animeTimer <= 5000) {
+            double time = animeTimer / 1000.0 - 1.0;
+            imgOffsetAdjustY = context.marioJumpSpeed * time + context.gravity * time * time / 2.0;
+        } else {
+            // TODO dispose
+            if (dieCallback != null) dieCallback.run();
+            setState(EntityState.DISPOSED);
+        }
+    }
+
     public void accelerate(double ratio) {
         accX = ratio * context.marioAcclerate;
         if (run) accX *= 1.5;
@@ -190,11 +240,28 @@ public class Mario extends EntityAdapter {
     public void tryJump(long timestamp) {
         if (topSupported) return;
         if (bottomSupported) {
-            speedY = -192.0;
+            speedY = context.marioJumpSpeed;
             lastJumpTimestamp = timestamp;
         } else if (timestamp - lastJumpTimestamp <= 100 && state == EntityState.JUMP) {
-            speedY = -192.0;
+            speedY = context.marioJumpSpeed;
         }
+    }
+
+    private long dieTimestamp = 0;
+    private Runnable dieCallback = null;
+
+    /**
+     * 向实体发送消息，使其设定自身状态为 DEAD 并播放死亡动画（如果有）
+     * 死亡动画播放完毕后会回调指定函数，之后将自身设定为 DISPOSED
+     * @param timestamp 死亡时的时间戳
+     * @param callback 回调函数，可为空
+     */
+    public void die(long timestamp, Runnable callback) {
+        if (dieTimestamp != 0) throw new RuntimeException(String.valueOf(dieTimestamp));
+        System.out.println(timestamp);
+        dieTimestamp = timestamp;
+        state = EntityState.DEAD;
+        dieCallback = callback;
     }
 
     @Override public void setState(EntityState state) {
@@ -203,5 +270,13 @@ public class Mario extends EntityAdapter {
 
     @Override public EntityState getState() {
         return state;
+    }
+
+    @Override public void activate() {
+        setState(EntityState.STAND);
+    }
+
+    @Override public void dispose() {
+        setState(EntityState.DISPOSED);
     }
 }

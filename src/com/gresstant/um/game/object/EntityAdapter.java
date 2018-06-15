@@ -140,26 +140,28 @@ public abstract class EntityAdapter implements IEntity {
         return height;
     }
 
+    protected double imgOffsetAdjustX = 0.0;
     protected double getImgOffsetX(int imgWidth) {
         switch (horzAlign) {
             case LEFT:
-                return 0;
+                return imgOffsetAdjustX;
             case RIGHT:
-                return width - imgWidth;
+                return width - imgWidth + imgOffsetAdjustX;
             case CENTER:
-                return (width - imgWidth) / 2.0;
+                return (width - imgWidth) / 2.0 + imgOffsetAdjustX;
         }
         throw new RuntimeException();
     }
 
+    protected double imgOffsetAdjustY = 0.0;
     protected double getImgOffsetY(int imgHeight) {
         switch (vertAlign) {
             case TOP:
-                return 0;
+                return imgOffsetAdjustY;
             case BOTTOM:
-                return height - imgHeight;
+                return height - imgHeight + imgOffsetAdjustY;
             case CENTER:
-                return (height - imgHeight) / 2.0;
+                return (height - imgHeight) / 2.0 + imgOffsetAdjustY;
         }
         throw new RuntimeException();
     }
