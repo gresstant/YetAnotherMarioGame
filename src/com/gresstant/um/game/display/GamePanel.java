@@ -212,10 +212,14 @@ public class GamePanel extends JPanel {
                         onStageEntities.add(new Block(context, 200, 150));
                         onStageEntities.add(new Block(context, 216, 150));
                         onStageEntities.add(new Block(context, 232, 150));
-                        onStageEntities.add(new Block(context, 232, 118));
+                        onStageEntities.add(new Block(context, 232, 110));
                         onStageEntities.add(new Block(context, 248, 150));
                         onStageEntities.add(new Block(context, 264, 150));
-                        player = new Mario(context, 100, 99);
+                        onStageEntities.add(new Goomba(context, 264, 120));
+                        player = new Mario(context, 100, 99, () -> {
+                            playerLife--;
+                            setState(GameState.LIFE_SPLASH);
+                        });
                         player.activate();
                         player.setGrowth(Mario.GrowthState.SMALL);
                         setState(GameState.IN_GAME);
@@ -284,14 +288,10 @@ public class GamePanel extends JPanel {
         List<Runnable> invokeLater = new LinkedList<>();
         long timestamp = System.currentTimeMillis();
 
-
         if (player.getState() != EntityState.DEAD && player.getState() != EntityState.DISPOSED) {
             // 死亡判定 + 检查自杀按键
             if (player.getBottom() > 200.0 || pressedKeys[KeyEvent.VK_O]) {
-                player.die(timestamp, () -> {
-                    playerLife--;
-                    setState(GameState.LIFE_SPLASH);
-                });
+                player.die();
             }
             // 更新蹲的状态，这个值不会在 tick 中被重置
             player.trySquat(pressedKeys[KeyEvent.VK_DOWN]);
@@ -329,80 +329,12 @@ public class GamePanel extends JPanel {
             if (!(playerState == EntityState.DEAD || playerState == EntityState.DISPOSED) &&
                     !(entityState == EntityState.FROZEN || entityState == EntityState.DISPOSED || entityState == EntityState.DEAD) &&
                     Utilities.collide(player, entity, player.speedX, player.speedY, context.TARGET_TPF)) {
-                // 后面要用很多遍，所以先放到这里
-                double eL = entity.getLeft(), eR = entity.getRight();
-                double eT = entity.getTop(), eB = entity.getBottom();
-                Direction direction; // 0 for ->, 1 for <-, 2 for ^, 3 for v, 4 for unknown
-                //region detect direction
-                //  **********
-                //  *1\* 2*/3*
-                //  **********
-                //  *4 * 5* 6* (5 will be ignored)
-                //  **********
-                //  *7/* 8*\9*
-                //  **********
-                if (eT - nextHC > 0) { // 1, 2, 3
-                    if (eL - nextVC > 0) { // 1
-                        // ****
-                        // *\v*
-                        // *>\*
-                        // ****
-                        if ((eT - nextHC) / (eL - nextVC) < playerRatio) {
-                            direction = Direction.RIGHTWARDS; // >
-                        } else {
-                            direction = Direction.DOWNWARDS; // v
-                        }
-                    } else if (nextVC - eR > 0) { // 3
-                        // ****
-                        // *v/*
-                        // */<*
-                        // ****
-                        if ((eT - nextHC) / (nextVC - eR) < playerRatio) {
-                            direction = Direction.LEFTWARDS; // <
-                        } else {
-                            direction = Direction.DOWNWARDS; // v
-                        }
-                    } else { // 2
-                        direction = Direction.DOWNWARDS; // v
-                    }
-                } else if (nextHC - eB > 0) { // 7, 8, 9
-                    if (eL - nextVC > 0) { // 7
-                        // ****
-                        // *>/*
-                        // */^*
-                        // ****
-                        if ((nextHC - eB) / (eL - nextVC) < playerRatio) {
-                            direction = Direction.RIGHTWARDS; // >
-                        } else {
-                            direction = Direction.UPWARDS; // ^
-                        }
-                    } else if (nextVC - eR > 0) { // 9
-                        // ****
-                        // *\<*
-                        // *^\*
-                        // ****
-                        if ((nextHC - eB) / (nextVC - eR) < playerRatio) {
-                            direction = Direction.LEFTWARDS; // <
-                        } else {
-                            direction = Direction.UPWARDS; // ^
-                        }
-                    } else { // 8
-                        direction = Direction.UPWARDS; // ^
-                    }
-                } else if (eL - nextVC > 0) { // 4
-                    direction = Direction.RIGHTWARDS; // >
-                } else if (nextVC - eR > 0) { // 6
-                    direction = Direction.LEFTWARDS; // <
-                } else { // 5
-//                    System.out.println("impossible");
-                    direction = null;
-                }
-                //endregion
+                Direction direction = collidedDirection(nextVC, nextHC, playerRatio, entity);
                 if (direction != null) switch (direction) {
                     case RIGHTWARDS:
                         if (player.speedX >= 0 && entity.collideRightwards(pressedKeys, player)) {
                             player.rightSuported = true;
-                            player.setRight(eL - 0.01);
+                            player.setRight(entity.getLeft() - 0.01);
                             player.speedX = 0;
                             player.accX = 0;
                         }
@@ -410,7 +342,7 @@ public class GamePanel extends JPanel {
                     case LEFTWARDS:
                         if (player.speedX <= 0 && entity.collideLeftwards(pressedKeys, player)) {
                             player.leftSuported = true;
-                            player.setLeft(eR + 0.01);
+                            player.setLeft(entity.getRight() + 0.01);
                             player.speedX = 0;
                             player.accX = 0;
                         }
@@ -419,15 +351,41 @@ public class GamePanel extends JPanel {
                         if (player.speedY <= 0 && entity.collideUpwards(pressedKeys, player)) {
                             player.topSupported = true;
                             player.speedY = Math.min(Math.abs(player.speedY), context.maxFallSpeed);
-                            player.setTop(eB + 0.01);
+                            player.setTop(entity.getBottom() + 0.01);
                         }
                         break;
                     case DOWNWARDS:
                         if (player.speedY >= 0 && entity.collideDownwards(pressedKeys, player)) {
                             player.bottomSupported = true;
-                            player.setBottom(eT + 0.01);
+                            player.setBottom(entity.getTop() + 0.01);
                         }
                         break;
+                }
+            }
+            if (entity instanceof IEnemy) {
+                for (IEntity e : onStageEntities) {
+                    if (e == entity) continue;
+                    EntityState eState = e.getState();
+                    if (!(eState == EntityState.FROZEN || eState == EntityState.DISPOSED || eState == EntityState.DEAD) &&
+                            Utilities.intersect(entity, e)) {
+                        Direction d = collidedDirection(entity.getVertCenter() + ((IEnemy) entity).getSpeedX(),
+                                entity.getHorzCenter() + ((IEnemy) entity).getSpeedY(),
+                                entity.getHeight() / entity.getWidth(), e);
+                        System.out.println(d);
+                        if (d == Direction.LEFTWARDS) {
+                            ((IEnemy) entity).barrierLeft();
+                            entity.setLeft(e.getRight() + 0.01);
+                        } else if (d == Direction.RIGHTWARDS) {
+                            ((IEnemy) entity).barrierRight();
+                            entity.setRight(e.getLeft() - 0.01);
+                        } else if (d == Direction.UPWARDS) {
+                            ((IEnemy) entity).barrierTop();
+                            //entity.setTop(e.getBottom() + 0.01);
+                        } else if (d == Direction.DOWNWARDS) {
+                            ((IEnemy) entity).barrierBottom();
+                            entity.setBottom(e.getTop() - 0.01);
+                        }// else continue
+                    }
                 }
             }
             if (entity.getState() != EntityState.FROZEN && entity.getState() != EntityState.DISPOSED)
@@ -444,7 +402,6 @@ public class GamePanel extends JPanel {
 
         // TODO 把右边的对象放到画面 list 中
         // TODO 把移出画面的对象移出 list
-
 
         // TODO 实装碰撞检测后，删除这一部分
         g.setColor(Color.YELLOW);
@@ -463,6 +420,84 @@ public class GamePanel extends JPanel {
         if (player.getState() != EntityState.DISPOSED)
             g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()) - stageX, (int) (player.getTop() + player.getImgOffsetY()), null);
         return output;
+    }
+
+    public Direction collidedDirection(IEntity e1, IEntity e2, double speedX, double speedY) {
+        return collidedDirection(e1.getVertCenter() + speedX,
+                e1.getHorzCenter() + speedY,
+                e1.getHeight() / e1.getWidth(),
+                e2);
+    }
+
+    public Direction collidedDirection(double nextVC, double nextHC, double playerRatio, IEntity entity) {
+        double eL = entity.getLeft(), eR = entity.getRight();
+        double eT = entity.getTop(), eB = entity.getBottom();
+        Direction direction; // 0 for ->, 1 for <-, 2 for ^, 3 for v, 4 for unknown
+        //region detect direction
+        //  **********
+        //  *1\* 2*/3*
+        //  **********
+        //  *4 * 5* 6* (5 will be ignored)
+        //  **********
+        //  *7/* 8*\9*
+        //  **********
+        if (eT - nextHC > 0) { // 1, 2, 3
+            if (eL - nextVC > 0) { // 1
+                // ****
+                // *\v*
+                // *>\*
+                // ****
+                if ((eT - nextHC) / (eL - nextVC) < playerRatio) {
+                    direction = Direction.RIGHTWARDS; // >
+                } else {
+                    direction = Direction.DOWNWARDS; // v
+                }
+            } else if (nextVC - eR > 0) { // 3
+                // ****
+                // *v/*
+                // */<*
+                // ****
+                if ((eT - nextHC) / (nextVC - eR) < playerRatio) {
+                    direction = Direction.LEFTWARDS; // <
+                } else {
+                    direction = Direction.DOWNWARDS; // v
+                }
+            } else { // 2
+                direction = Direction.DOWNWARDS; // v
+            }
+        } else if (nextHC - eB > 0) { // 7, 8, 9
+            if (eL - nextVC > 0) { // 7
+                // ****
+                // *>/*
+                // */^*
+                // ****
+                if ((nextHC - eB) / (eL - nextVC) < playerRatio) {
+                    direction = Direction.RIGHTWARDS; // >
+                } else {
+                    direction = Direction.UPWARDS; // ^
+                }
+            } else if (nextVC - eR > 0) { // 9
+                // ****
+                // *\<*
+                // *^\*
+                // ****
+                if ((nextHC - eB) / (nextVC - eR) < playerRatio) {
+                    direction = Direction.LEFTWARDS; // <
+                } else {
+                    direction = Direction.UPWARDS; // ^
+                }
+            } else { // 8
+                direction = Direction.UPWARDS; // ^
+            }
+        } else if (eL - nextVC > 0) { // 4
+            direction = Direction.RIGHTWARDS; // >
+        } else if (nextVC - eR > 0) { // 6
+            direction = Direction.LEFTWARDS; // <
+        } else { // 5
+            direction = null;
+        }
+        //endregion
+        return direction;
     }
 
     @Override public void update(Graphics g) {

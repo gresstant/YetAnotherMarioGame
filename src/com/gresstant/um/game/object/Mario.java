@@ -60,13 +60,14 @@ public class Mario extends EntityAdapter {
         BULLET
     }
 
-    public Mario(Context context, double x, double y) {
+    public Mario(Context context, double x, double y, Runnable dieCallback) {
         this.context = context;
         this.x = x;
         this.y = y;
         setGrowth(GrowthState.SMALL);
         horzAlign = HorzAlign.CENTER;
         vertAlign = VertAlign.BOTTOM;
+        this.dieCallback = dieCallback;
     }
 
     public GrowthState getGrowth() {
@@ -273,6 +274,11 @@ public class Mario extends EntityAdapter {
     private long dieTimestamp = 0;
     private Runnable dieCallback = null;
 
+    public void die() {
+        state = EntityState.DEAD;
+        setGrowth(GrowthState.SMALL);
+    }
+
     /**
      * 向实体发送消息，使其设定自身状态为 DEAD 并播放死亡动画（如果有）
      * 死亡动画播放完毕后会回调指定函数，之后将自身设定为 DISPOSED
@@ -282,9 +288,8 @@ public class Mario extends EntityAdapter {
     public void die(long timestamp, Runnable callback) {
         if (dieTimestamp != 0) throw new RuntimeException(String.valueOf(dieTimestamp));
         dieTimestamp = timestamp;
-        state = EntityState.DEAD;
         dieCallback = callback;
-        setGrowth(GrowthState.SMALL);
+        die();
     }
 
     @Override public double getHeight() {
