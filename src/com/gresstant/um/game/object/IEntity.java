@@ -57,4 +57,11 @@ public interface IEntity {
      * 绘制图像时，左上角的纵坐标为 getTop() + getImgOffsetY()
      */
     double getImgOffsetY();
+
+    /**
+     * 程序通知实体跳帧
+     * 实体状态为 FROZEN 或 DISPOSED 时，或游戏暂停时，此函数不会被调用
+     * @param ms
+     */
+    void tick(int ms);
 }

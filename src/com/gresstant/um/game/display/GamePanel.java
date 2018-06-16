@@ -196,7 +196,6 @@ public class GamePanel extends JPanel {
                         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
                         g.drawImage(small, 0, 0, 800, 600, null);
                     }
-                    System.out.println("LIFE " + frameElapsed);
 
                     int timeElapsed = frameElapsed * context.TARGET_TPF; // 单位为毫秒
                     if (timeElapsed < 1000) { // 0s - 1s
@@ -218,7 +217,7 @@ public class GamePanel extends JPanel {
                         onStageEntities.add(new Block(context, 264, 150));
                         player = new Mario(context, 100, 99);
                         player.activate();
-                        player.setGrowth(Mario.GrowthState.BIG);
+                        player.setGrowth(Mario.GrowthState.SMALL);
                         setState(GameState.IN_GAME);
                         break;
                     }
@@ -288,7 +287,7 @@ public class GamePanel extends JPanel {
 
         if (player.getState() != EntityState.DEAD && player.getState() != EntityState.DISPOSED) {
             // 死亡判定 + 检查自杀按键
-            if (player.getTop() > 200.0 || pressedKeys[KeyEvent.VK_O]) {
+            if (player.getBottom() > 200.0 || pressedKeys[KeyEvent.VK_O]) {
                 player.die(timestamp, () -> {
                     playerLife--;
                     setState(GameState.LIFE_SPLASH);
@@ -431,6 +430,8 @@ public class GamePanel extends JPanel {
                         break;
                 }
             }
+            if (entity.getState() != EntityState.FROZEN && entity.getState() != EntityState.DISPOSED)
+                entity.tick(context.TARGET_TPF);
             BufferedImage eImg = entity.getImage();
             if (eImg != null)
                 g.drawImage(eImg, (int) (entity.getLeft() + entity.getImgOffsetX()) - stageX, (int) (entity.getTop() + entity.getImgOffsetY()), null);
@@ -447,7 +448,7 @@ public class GamePanel extends JPanel {
 
         // TODO 实装碰撞检测后，删除这一部分
         g.setColor(Color.YELLOW);
-        g.drawLine(0, 100, stageWidth, 100);
+        g.drawLine(0, 200, stageWidth, 200);
         g.setColor(Color.WHITE);
         g.drawLine((int) player.getLeft() - stageX, 0, (int) player.getLeft() - stageX, stageHeight);
         g.drawLine(0, (int) player.getTop(), stageWidth, (int) player.getTop());

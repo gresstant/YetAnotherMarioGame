@@ -9,9 +9,7 @@ public abstract class BlockAdapter extends EntityAdapter implements IBlock {
         setState(EntityState.DISPOSED);
     }
 
-    @Override public void die(long timestamp, Runnable callback) {
-        dispose(); // TODO 这里应该给一个碎掉的动画
-    }
+    @Override public void tick(int ms) {}
 
     @Override public boolean collideUpwards(boolean[] keyArray, Mario player) {
         return true;
