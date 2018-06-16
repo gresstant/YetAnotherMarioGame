@@ -67,6 +67,8 @@ public class GamePanel extends JPanel {
      * 当前舞台的最左侧
      */
     public int stageX = 0;
+    public final int stageWidth = 400, stageHeight = 300;
+    public int mapWidth = 440;
     public Mario player;
     public int playerLife = 3;
 
@@ -74,6 +76,13 @@ public class GamePanel extends JPanel {
         this.context = context;
         this.res = res; // 在进行异步加载部分的开发之前，暂时保留这个参数
         setPreferredSize(new Dimension(800, 600));
+    }
+
+    /**
+     * 初始化
+     */
+    private void init() {
+        stageX = 0;
     }
 
     /**
@@ -177,7 +186,7 @@ public class GamePanel extends JPanel {
                         g.setBackground(Color.BLACK);
                         g.clearRect(0, 0, getWidth(), getHeight());
 
-                        BufferedImage small = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
+                        BufferedImage small = new BufferedImage(stageWidth, stageHeight, BufferedImage.TYPE_INT_ARGB);
                         Graphics2D gs = small.createGraphics();
                         gs.drawImage(res.getResource("MARIO$SMALL$STAND")[0], 160, 150 - 8, null);
                         gs.setFont(new Font(g.getFont().getName(), Font.PLAIN, 16));
@@ -194,6 +203,7 @@ public class GamePanel extends JPanel {
                         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                     } else {
                         // TODO 需要设定游戏数据到上一个 checkpoint
+                        init();
                         onStageEntities.clear();
                         onStageEntities.add(new Block(context, 100, 100));
                         onStageEntities.add(new Block(context, 200, 60));
@@ -203,6 +213,7 @@ public class GamePanel extends JPanel {
                         onStageEntities.add(new Block(context, 200, 150));
                         onStageEntities.add(new Block(context, 216, 150));
                         onStageEntities.add(new Block(context, 232, 150));
+                        onStageEntities.add(new Block(context, 232, 118));
                         onStageEntities.add(new Block(context, 248, 150));
                         onStageEntities.add(new Block(context, 264, 150));
                         player = new Mario(context, 100, 99);
@@ -264,10 +275,10 @@ public class GamePanel extends JPanel {
 
     /**
      * 更新游戏，然后画出来
-     * @return 返回当前游戏的画面。尺寸应当为400*300。
+     * @return 返回当前游戏的画面。尺寸应当为stageWidth*stageHeight。
      */
     private BufferedImage updateGame() {
-        BufferedImage output = new BufferedImage(400, 300, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage output = new BufferedImage(stageWidth, stageHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = output.createGraphics();
         g.clearRect(0, 0, getWidth(), getHeight());
 
@@ -302,6 +313,15 @@ public class GamePanel extends JPanel {
         double nextVC = player.getVertCenter() + displaceX;
         double nextHC = player.getHorzCenter() + displaceY;
         double playerRatio = player.getHeight() / player.getWidth();
+
+        // 不能让玩家跑到屏幕外边
+        if (player.getLeft() + displaceX <= stageX) {
+            player.leftSuported = true;
+            player.setLeft(stageX);
+        }
+
+        // 更新舞台位置
+        stageX = Math.max(Math.min((int) player.getVertCenter() - stageWidth / 2, mapWidth - stageWidth), stageX);
 
         // 真·碰撞检测，顺便把实体画出来
         for (IEntity entity : onStageEntities) {
@@ -382,6 +402,7 @@ public class GamePanel extends JPanel {
                 if (direction != null) switch (direction) {
                     case RIGHTWARDS:
                         if (player.speedX >= 0 && entity.collideRightwards(pressedKeys, player)) {
+                            player.rightSuported = true;
                             player.setRight(eL - 0.01);
                             player.speedX = 0;
                             player.accX = 0;
@@ -389,6 +410,7 @@ public class GamePanel extends JPanel {
                         break;
                     case LEFTWARDS:
                         if (player.speedX <= 0 && entity.collideLeftwards(pressedKeys, player)) {
+                            player.leftSuported = true;
                             player.setLeft(eR + 0.01);
                             player.speedX = 0;
                             player.accX = 0;
@@ -425,20 +447,20 @@ public class GamePanel extends JPanel {
 
         // TODO 实装碰撞检测后，删除这一部分
         g.setColor(Color.YELLOW);
-        g.drawLine(0, 100, 400, 100);
+        g.drawLine(0, 100, stageWidth, 100);
         g.setColor(Color.WHITE);
-        g.drawLine((int) player.getLeft(), 0, (int) player.getLeft(), 300);
-        g.drawLine(0, (int) player.getTop(), 400, (int) player.getTop());
-        g.drawLine((int) player.getRight(), 0, (int) player.getRight(), 300);
-        g.drawLine(0, (int) player.getBottom(), 400, (int) player.getBottom());
+        g.drawLine((int) player.getLeft() - stageX, 0, (int) player.getLeft() - stageX, stageHeight);
+        g.drawLine(0, (int) player.getTop(), stageWidth, (int) player.getTop());
+        g.drawLine((int) player.getRight() - stageX, 0, (int) player.getRight() - stageX, stageHeight);
+        g.drawLine(0, (int) player.getBottom(), stageWidth, (int) player.getBottom());
         g.setColor(Color.MAGENTA);
         g.drawString("Top: " + player.getTop(), 0, (int) player.getTop());
         g.drawString("Bottom: " + player.getBottom(), 0, (int) player.getBottom());
-        g.drawString("Left: " + player.getLeft(), (int) player.getLeft(), 280);
-        g.drawString("Right: " + player.getRight(), (int) player.getRight(), 300);
+        g.drawString("Left: " + player.getLeft(), (int) player.getLeft() - stageX, stageHeight - 12);
+        g.drawString("Right: " + player.getRight(), (int) player.getRight() - stageX, stageHeight);
 
         if (player.getState() != EntityState.DISPOSED)
-            g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()), (int) (player.getTop() + player.getImgOffsetY()), null);
+            g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()) - stageX, (int) (player.getTop() + player.getImgOffsetY()), null);
         return output;
     }
 

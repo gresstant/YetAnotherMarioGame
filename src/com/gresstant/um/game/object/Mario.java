@@ -51,6 +51,9 @@ public class Mario extends EntityAdapter {
      */
     public boolean topSupported = false;
 
+    public boolean leftSuported = false;
+    public boolean rightSuported = false;
+
     public enum GrowthState {
         SMALL,
         BIG,
@@ -155,7 +158,11 @@ public class Mario extends EntityAdapter {
         double oldSpeedX = speedX;
 
         // 根据横向加速度调整速度和位置
-        if (Math.abs(speedX) < (run ? context.marioMaxRunSpeed : context.marioMaxWalkSpeed)) { // 速度小于最大速度
+        if (leftSuported && speedX < 0.0 || rightSuported & speedX > 0.0) {
+            speedX = 0.0;
+            oldSpeedX = 0.0; // 强制去除位移
+            accX = 0.0;
+        } else if (Math.abs(speedX) < (run ? context.marioMaxRunSpeed : context.marioMaxWalkSpeed)) { // 速度小于最大速度
             speedX += accX * second;
         } else if (state != EntityState.JUMP && turning) { // 没在跳，且在转身
             // 转身时八倍加速度
@@ -203,6 +210,8 @@ public class Mario extends EntityAdapter {
         accX = 0.0;
         bottomSupported = false;
         topSupported = false;
+        leftSuported = false;
+        rightSuported = false;
         //squating = false; // 在这里重置会导致后面绘图时获取不到状态
     }
 
