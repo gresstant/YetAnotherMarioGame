@@ -37,9 +37,9 @@ public class Mario extends EntityAdapter {
     private String growthString = "SMALL";
     /**
      * 是否在蹲。
-     * 针对此变量的赋 true 值操作应当交由 GamePanel 完成。
+     * 针对此变量的赋 true 值操作应当交由 GamePanel 通过 trySquat 完成。
      */
-    public boolean squating = false;
+    private boolean squating = false;
     /**
      * 马里奥的脚下是否有东西做支撑
      * 针对此变量的赋 true 值操作应当交由 GamePanel 完成。
@@ -112,13 +112,14 @@ public class Mario extends EntityAdapter {
             case DISPOSED:
                 return getResource("MARIO$" + growthString + "$STAND", false)[0];
             case STAND:
-                if (squating) return getResource("MARIO$" + growthString + "$SQUAT", false)[0];
+                if (squating) return getResource("MARIO$" + growthString + "$SQUAT", !faceRight)[0];
                 return getResource("MARIO$" + growthString + "$STAND", !faceRight)[0];
             case RUN:
+                if (squating) return getResource("MARIO$" + growthString + "$SQUAT", !faceRight)[0];
                 if (turning) return getResource("MARIO$" + growthString + "$TURN", !faceRight)[0];
                 return getResource("MARIO$" + growthString + "$WALK", !faceRight)[Math.abs((int) x / 2 % 4)];
             case JUMP:
-                if (squating) return getResource("MARIO$" + growthString + "$SQUAT", false)[0];
+                if (squating) return getResource("MARIO$" + growthString + "$SQUAT", !faceRight)[0];
                 return getResource("MARIO$" + growthString + "$JUMP", !faceRight)[0];
             case DEAD:
                 return getResource("MARIO$SMALL$OVER", !faceRight)[0];
@@ -166,7 +167,8 @@ public class Mario extends EntityAdapter {
 
         // 摩擦力
         if (state == EntityState.RUN & accX == 0.0) { // 飞行或站立时没有摩擦
-            accX = -Math.signum(speedX) * context.marioFraction; // TODO 这里以后应当乘以一个 ratio
+            accX = squating ? -Math.signum(speedX) * context.marioFraction * 2.0 :
+                    -Math.signum(speedX) * context.marioFraction; // TODO 这里以后应当乘以一个 ratio
             speedX += accX * second;
             if (Math.abs(speedX) - Math.abs(context.marioFraction * second) < 0.0) { // 如果摩擦加速度大到能够使得马里奥转向
                 accX = 0.0;
@@ -201,6 +203,7 @@ public class Mario extends EntityAdapter {
         accX = 0.0;
         bottomSupported = false;
         topSupported = false;
+        //squating = false; // 在这里重置会导致后面绘图时获取不到状态
     }
 
     private long dieTimer = 0;
@@ -212,7 +215,7 @@ public class Mario extends EntityAdapter {
             // do nothing
         } else if (animeTimer <= 5000) {
             double time = animeTimer / 1000.0 - 1.0;
-            imgOffsetAdjustY = context.marioJumpSpeed * time + context.gravity * time * time / 2.0;
+            imgOffsetAdjustY = context.marioJumpSpeed * 1.5 * time + context.gravity * time * time / 2.0;
         } else {
             // TODO dispose
             if (dieCallback != null) dieCallback.run();
@@ -222,6 +225,7 @@ public class Mario extends EntityAdapter {
     }
 
     public void accelerate(double ratio) {
+        if (squating) return;
         accX = ratio * context.marioAcclerate;
         if (run) accX *= 1.5;
         if (state != EntityState.JUMP) { // 跳跃时不会转向
@@ -249,6 +253,14 @@ public class Mario extends EntityAdapter {
         }
     }
 
+    public void trySquat(boolean val) {
+        squating = val && (growth == GrowthState.BIG || growth == GrowthState.BULLET);
+    }
+
+    public boolean isSquat() {
+        return squating;
+    }
+
     private long dieTimestamp = 0;
     private Runnable dieCallback = null;
 
@@ -260,11 +272,16 @@ public class Mario extends EntityAdapter {
      */
     public void die(long timestamp, Runnable callback) {
         if (dieTimestamp != 0) throw new RuntimeException(String.valueOf(dieTimestamp));
-        System.out.println(timestamp);
         dieTimestamp = timestamp;
         state = EntityState.DEAD;
         dieCallback = callback;
         setGrowth(GrowthState.SMALL);
+    }
+
+    @Override public double getHeight() {
+        if (squating)
+            return super.getHeight() / 2.0;
+        return super.getHeight();
     }
 
     @Override public void setState(EntityState state) {

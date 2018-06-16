@@ -25,9 +25,9 @@ public abstract class EntityAdapter implements IEntity {
             case LEFT:
                 return x;
             case RIGHT:
-                return x - width;
+                return x - getWidth();
             case CENTER:
-                return x - width / 2.0;
+                return x - getWidth() / 2.0;
         }
         throw new RuntimeException();
     }
@@ -38,10 +38,10 @@ public abstract class EntityAdapter implements IEntity {
                 x = val;
                 break;
             case RIGHT:
-                x = val + width;
+                x = val + getWidth();
                 break;
             case CENTER:
-                x = val + width / 2.0;
+                x = val + getWidth() / 2.0;
                 break;
             default:
                 throw new RuntimeException();
@@ -51,9 +51,9 @@ public abstract class EntityAdapter implements IEntity {
     @Override public double getVertCenter() {
         switch (horzAlign) {
             case LEFT:
-                return x - width / 2.0;
+                return x - getWidth() / 2.0;
             case RIGHT:
-                return x + width / 2.0;
+                return x + getWidth() / 2.0;
             case CENTER:
                 return x;
         }
@@ -63,10 +63,10 @@ public abstract class EntityAdapter implements IEntity {
     @Override public void setVertCenter(double val) {
         switch (horzAlign) {
             case LEFT:
-                x = val + width / 2.0;
+                x = val + getWidth() / 2.0;
                 break;
             case RIGHT:
-                x = val - width / 2.0;
+                x = val - getWidth() / 2.0;
                 break;
             case CENTER:
                 x = val;
@@ -79,11 +79,11 @@ public abstract class EntityAdapter implements IEntity {
     @Override public double getRight() {
         switch (horzAlign) {
             case LEFT:
-                return x + width;
+                return x + getWidth();
             case RIGHT:
                 return x;
             case CENTER:
-                return x + width / 2.0;
+                return x + getWidth() / 2.0;
         }
         throw new RuntimeException();
     }
@@ -91,13 +91,13 @@ public abstract class EntityAdapter implements IEntity {
     @Override public void setRight(double val) {
         switch (horzAlign) {
             case LEFT:
-                x = val - width;
+                x = val - getWidth();
                 break;
             case RIGHT:
                 x = val;
                 break;
             case CENTER:
-                x = val - width / 2.0;
+                x = val - getWidth() / 2.0;
                 break;
             default:
                 throw new RuntimeException();
@@ -109,9 +109,9 @@ public abstract class EntityAdapter implements IEntity {
             case TOP:
                 return y;
             case BOTTOM:
-                return y - height;
+                return y - getHeight();
             case CENTER:
-                return y - height / 2.0;
+                return y - getHeight() / 2.0;
         }
         throw new RuntimeException();
     }
@@ -122,10 +122,10 @@ public abstract class EntityAdapter implements IEntity {
                 y = val;
                 break;
             case BOTTOM:
-                y = val + height;
+                y = val + getHeight();
                 break;
             case CENTER:
-                y = val + height / 2.0;
+                y = val + getHeight() / 2.0;
                 break;
             default:
                 throw new RuntimeException();
@@ -135,9 +135,9 @@ public abstract class EntityAdapter implements IEntity {
     @Override public double getHorzCenter() {
         switch (vertAlign) {
             case TOP:
-                return y + height / 2.0;
+                return y + getHeight() / 2.0;
             case BOTTOM:
-                return y - height / 2.0;
+                return y - getHeight() / 2.0;
             case CENTER:
                 return y;
         }
@@ -147,10 +147,10 @@ public abstract class EntityAdapter implements IEntity {
     @Override public void setHorzCenter(double val) {
         switch (vertAlign) {
             case TOP:
-                y = val - height / 2.0;
+                y = val - getHeight() / 2.0;
                 break;
             case BOTTOM:
-                y = val + height / 2.0;
+                y = val + getHeight() / 2.0;
                 break;
             case CENTER:
                 y = val;
@@ -163,11 +163,11 @@ public abstract class EntityAdapter implements IEntity {
     @Override public double getBottom() {
         switch (vertAlign) {
             case TOP:
-                return y + height;
+                return y + getHeight();
             case BOTTOM:
                 return y;
             case CENTER:
-                return y + height / 2.0;
+                return y + getHeight() / 2.0;
         }
         throw new RuntimeException();
     }
@@ -175,13 +175,13 @@ public abstract class EntityAdapter implements IEntity {
     @Override public void setBottom(double val) {
         switch (vertAlign) {
             case TOP:
-                y = val - height;
+                y = val - getHeight();
                 break;
             case BOTTOM:
                 y = val;
                 break;
             case CENTER:
-                y = val - height / 2.0;
+                y = val - getHeight() / 2.0;
                 break;
             default:
                 throw new RuntimeException();
@@ -202,9 +202,9 @@ public abstract class EntityAdapter implements IEntity {
             case LEFT:
                 return imgOffsetAdjustX;
             case RIGHT:
-                return width - imgWidth + imgOffsetAdjustX;
+                return getWidth() - imgWidth + imgOffsetAdjustX;
             case CENTER:
-                return (width - imgWidth) / 2.0 + imgOffsetAdjustX;
+                return (getWidth() - imgWidth) / 2.0 + imgOffsetAdjustX;
         }
         throw new RuntimeException();
     }
@@ -215,9 +215,9 @@ public abstract class EntityAdapter implements IEntity {
             case TOP:
                 return imgOffsetAdjustY;
             case BOTTOM:
-                return height - imgHeight + imgOffsetAdjustY;
+                return getHeight() - imgHeight + imgOffsetAdjustY;
             case CENTER:
-                return (height - imgHeight) / 2.0 + imgOffsetAdjustY;
+                return (getHeight() - imgHeight) / 2.0 + imgOffsetAdjustY;
         }
         throw new RuntimeException();
     }

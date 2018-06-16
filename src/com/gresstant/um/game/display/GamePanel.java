@@ -283,7 +283,9 @@ public class GamePanel extends JPanel {
                     setState(GameState.LIFE_SPLASH);
                 });
             }
-            // 检查移动+跳跃按键
+            // 更新蹲的状态，这个值不会在 tick 中被重置
+            player.trySquat(pressedKeys[KeyEvent.VK_DOWN]);
+            // 检查移动+跳跃按键，注意这一部分需要放到检查蹲之后
             if (pressedKeys[KeyEvent.VK_RIGHT])
                 player.accelerate(1.0);
             if (pressedKeys[KeyEvent.VK_LEFT])
@@ -438,11 +440,6 @@ public class GamePanel extends JPanel {
         if (player.getState() != EntityState.DISPOSED)
             g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()), (int) (player.getTop() + player.getImgOffsetY()), null);
         return output;
-    }
-
-    public void playerDie() {
-        Runnable callback = () -> playerLife--;
-
     }
 
     @Override public void update(Graphics g) {
