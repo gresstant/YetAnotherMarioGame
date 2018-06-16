@@ -409,7 +409,7 @@ public class GamePanel extends JPanel {
             }
             BufferedImage eImg = entity.getImage();
             if (eImg != null)
-                g.drawImage(eImg, (int) (entity.getLeft() + entity.getImgOffsetX()), (int) (entity.getTop() + entity.getImgOffsetY()), null);
+                g.drawImage(eImg, (int) (entity.getLeft() + entity.getImgOffsetX()) - stageX, (int) (entity.getTop() + entity.getImgOffsetY()), null);
         }
 
         // 一切有效信息就绪后，命令 Mario 跳帧

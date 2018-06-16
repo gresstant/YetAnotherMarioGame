@@ -1,5 +1,7 @@
 package com.gresstant.um.game.display;
 
+import com.gresstant.um.game.object.Utilities;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -31,7 +33,7 @@ public class Resource<T> implements IResource<T> {
         // 马里奥（大）
         output.storage.put("MARIO$LARGE$STAND", new BufferedImage[] {img.getSubimage(48, 548, 16, 32)});
         output.storage.put("MARIO$LARGE$SQUAT", new BufferedImage[] {img.getSubimage(23, 548, 16, 32)});
-        output.storage.put("MARIO$LARGE$TURN", new BufferedImage[] {img.getSubimage(71, 548, 16, 32)});
+        output.storage.put("MARIO$LARGE$TURN", new BufferedImage[] {Utilities.createHorzFlipped(img.getSubimage(71, 548, 16, 32))});
         output.storage.put("MARIO$LARGE$WALK", new BufferedImage[] {img.getSubimage(94, 548, 16, 32),
                 img.getSubimage(115, 549, 16, 32),
                 img.getSubimage(139, 549, 16, 32),

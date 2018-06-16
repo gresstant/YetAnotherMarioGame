@@ -139,7 +139,7 @@ public class Mario extends EntityAdapter {
             case FROZEN: case DISPOSED:
                 break; // do nothing
             case DEAD:
-                tickDieAnimation();
+                tickDieAnimation(ms);
                 break;
             default:
                 throw new RuntimeException();
@@ -203,9 +203,11 @@ public class Mario extends EntityAdapter {
         topSupported = false;
     }
 
-    private void tickDieAnimation() {
+    private long dieTimer = 0;
+    private void tickDieAnimation(int ms) {
         // assert dieTimestamp != 0;
-        long animeTimer = System.currentTimeMillis() - dieTimestamp;
+        dieTimer += ms;
+        long animeTimer = dieTimer;//System.currentTimeMillis() - dieTimestamp;
         if (animeTimer <= 1000) {
             // do nothing
         } else if (animeTimer <= 5000) {
@@ -214,6 +216,7 @@ public class Mario extends EntityAdapter {
         } else {
             // TODO dispose
             if (dieCallback != null) dieCallback.run();
+            dieTimer = 0;
             setState(EntityState.DISPOSED);
         }
     }
@@ -241,8 +244,8 @@ public class Mario extends EntityAdapter {
         if (bottomSupported) {
             speedY = context.marioJumpSpeed;
             lastJumpTimestamp = timestamp;
-        } else if (timestamp - lastJumpTimestamp <= 100 && state == EntityState.JUMP) {
-            speedY = context.marioJumpSpeed;
+        } else if (timestamp - lastJumpTimestamp <= 200 && state == EntityState.JUMP) {
+            speedY = context.marioJumpSpeed - (timestamp - lastJumpTimestamp) / 2.5;
         }
     }
 
