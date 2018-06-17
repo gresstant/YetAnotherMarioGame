@@ -87,6 +87,11 @@ public class Mario extends EntityAdapter {
                 height = 32.0;
                 growthString = "LARGE";
                 break;
+            case BULLET:
+                width = 16.0;
+                height = 32.0;
+                growthString = "FIRE";
+                break;
             default:
                 throw new RuntimeException("not implemented");
         }

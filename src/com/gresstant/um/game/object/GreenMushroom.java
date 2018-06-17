@@ -1,18 +1,23 @@
 package com.gresstant.um.game.object;
 
 import com.gresstant.um.game.Context;
-import com.gresstant.um.game.map.MapBase;
 
 import java.awt.image.BufferedImage;
 
-public class Goomba extends EnemyAdapter {
-    public Goomba(Context context, double x, double y) {
-        super(context, 16.0);
-        height = 16.0;
+public class GreenMushroom extends EnemyAdapter {
+    private BufferedImage imgBuffer;
+    private Runnable callback;
+
+    public GreenMushroom(Context context, boolean movable, double x, double y, Runnable callback) {
+        super(context, movable ? 16.0 : 0.0);
+        imgBuffer = context.imgRes.getResource("MUSHROOM$GREEN$WALK")[0];
+        this.callback = callback;
+
         width = 16.0;
-        imgBuffer = context.imgRes.getResource("GOOMBA$NORMAL$WALK");
+        height = 16.0;
         horzAlign = HorzAlign.CENTER;
         vertAlign = VertAlign.BOTTOM;
+
         setLeft(x);
         setTop(y);
     }
@@ -31,47 +36,36 @@ public class Goomba extends EnemyAdapter {
 
     @Override public boolean collideUpwards(boolean[] keyArray, IEntity entity) {
         if (entity instanceof Mario)
-            ((Mario) entity).die();
+            marioCollide();
         return false;
     }
 
     @Override public boolean collideDownwards(boolean[] keyArray, IEntity entity) {
-        if (entity instanceof Mario) {
-            die(0, null);
-            ((Mario) entity).bottomSupported = true;
-            ((Mario) entity).tryJump(System.currentTimeMillis());
-        }
+        if (entity instanceof Mario)
+            marioCollide();
         return false;
     }
 
     @Override public boolean collideLeftwards(boolean[] keyArray, IEntity entity) {
-        if (entity instanceof Mario) {
-            ((Mario) entity).die();
-        }
+        if (entity instanceof Mario)
+            marioCollide();
         return false;
     }
 
     @Override public boolean collideRightwards(boolean[] keyArray, IEntity entity) {
-        if (entity instanceof Mario) {
-            ((Mario) entity).die();
-        }
+        if (entity instanceof Mario)
+            marioCollide();
         return false;
     }
 
-    private BufferedImage[] imgBuffer;
+    private void marioCollide() {
+        callback.run();
+        dispose();
+    }
+
     @Override public BufferedImage getImage() {
-        switch (getState()) {
-            case DISPOSED:
-                return null;
-            case STILL:
-            case DEAD:
-            case STAND:
-                return context.imgRes.getResource("GOOMBA$NORMAL$OVER")[0];
-            case FROZEN:
-            case RUN:
-            case JUMP:
-                return imgBuffer[(int) x / 4 % 2];
-        }
+        if (getState() != EntityState.DISPOSED)
+            return imgBuffer;
         return null;
     }
 }

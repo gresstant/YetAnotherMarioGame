@@ -1,20 +1,21 @@
 package com.gresstant.um.game.object;
 
 import com.gresstant.um.game.Context;
-import com.gresstant.um.game.map.MapBase;
 
 import java.awt.image.BufferedImage;
 
-public class Goomba extends EnemyAdapter {
-    public Goomba(Context context, double x, double y) {
-        super(context, 16.0);
+public class Bullet extends EnemyAdapter {
+    public Bullet(Context context, double x, double y, double speed) {
+        super(context, speed);
         height = 16.0;
         width = 16.0;
-        imgBuffer = context.imgRes.getResource("GOOMBA$NORMAL$WALK");
+        imgBuffer = context.imgRes.getResource("BULLET$NORMAL$WALK");
         horzAlign = HorzAlign.CENTER;
         vertAlign = VertAlign.BOTTOM;
         setLeft(x);
         setTop(y);
+        _x = x;
+        _y = y;
     }
 
     @Override public void activate() {
@@ -37,9 +38,7 @@ public class Goomba extends EnemyAdapter {
 
     @Override public boolean collideDownwards(boolean[] keyArray, IEntity entity) {
         if (entity instanceof Mario) {
-            die(0, null);
-            ((Mario) entity).bottomSupported = true;
-            ((Mario) entity).tryJump(System.currentTimeMillis());
+            ((Mario) entity).die();
         }
         return false;
     }
@@ -60,18 +59,17 @@ public class Goomba extends EnemyAdapter {
 
     private BufferedImage[] imgBuffer;
     @Override public BufferedImage getImage() {
-        switch (getState()) {
-            case DISPOSED:
-                return null;
-            case STILL:
-            case DEAD:
-            case STAND:
-                return context.imgRes.getResource("GOOMBA$NORMAL$OVER")[0];
-            case FROZEN:
-            case RUN:
-            case JUMP:
-                return imgBuffer[(int) x / 4 % 2];
-        }
-        return null;
+        if (getState() == EntityState.DISPOSED)
+            return null;
+        return imgBuffer[0];
+    }
+
+    private double _x, _y;
+    @Override public void tick(int ms) {
+        double time = ms / 1000.0;
+        if (y > 500.0) setState(EntityState.DISPOSED);
+        _x += speedX * time;
+        x = _x;
+        y = _y;
     }
 }

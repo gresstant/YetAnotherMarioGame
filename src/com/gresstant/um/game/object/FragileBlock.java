@@ -8,9 +8,9 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
-public class Block extends BlockAdapter {
-    Context context;
-    EntityState state = EntityState.STILL;
+public class FragileBlock extends BlockAdapter {
+    private Context context;
+    private EntityState state = EntityState.FROZEN;
     /**
      * 0 for no animation
      * 1 for up animation
@@ -18,15 +18,16 @@ public class Block extends BlockAdapter {
      */
     int anime = 0, animeTimer = 0;
 
-    public Block(Context context, double x, double y) {
+    public FragileBlock(Context context, double x, double y) {
         this.context = context;
-        this.x = x;
-        this.y = y;
 
         horzAlign = HorzAlign.CENTER;
         vertAlign = VertAlign.TOP;
         height = 16.0;
         width = 16.0;
+
+        setLeft(x);
+        setTop(y);
 
         imgBuffer = context.imgRes.getResource("PALEBLOCK$NORMAL$STAND")[0];
     }
@@ -39,7 +40,7 @@ public class Block extends BlockAdapter {
         this.state = state;
     }
 
-    private BufferedImage imgBuffer;
+    protected BufferedImage imgBuffer;
     @Override public BufferedImage getImage() {
         switch (getState()) {
             case FROZEN:

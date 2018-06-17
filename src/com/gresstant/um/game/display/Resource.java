@@ -78,12 +78,15 @@ public class Resource<T> implements IResource<T> {
         output.storage.put("BBILL$NORMAL$STAND",new BufferedImage[] {img.getSubimage(595, 798, 16, 32)});
 
         // 炮弹
-        output.storage.put("BULLET$NORMAL$WALK",new BufferedImage[] {img.getSubimage(577, 782, 16, 32)});
+        output.storage.put("BULLET$NORMAL$WALK",new BufferedImage[] {img.getSubimage(577, 798, 16, 16)});
 
         // 各种蘑菇
         output.storage.put("MUSHROOM$GREEN$WALK",new BufferedImage[] {img.getSubimage(50, 42, 16, 16)});
         output.storage.put("MUSHROOM$RED$WALK",new BufferedImage[] {img.getSubimage(70, 42, 16, 16)});
         output.storage.put("MUSHROOM$BLUE$WALK",new BufferedImage[] {img.getSubimage(97, 42, 16, 16)});
+
+        // 花
+        output.storage.put("FLOWER$NORMAL$STILL",new BufferedImage[] {img.getSubimage(52, 64, 16, 16)});
 
         // 各种砖块
         output.storage.put("SHINYBLOCK$NORMAL$STAND",new BufferedImage[] {img.getSubimage(373, 47, 16, 16)});

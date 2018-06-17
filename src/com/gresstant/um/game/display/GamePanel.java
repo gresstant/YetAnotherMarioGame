@@ -43,6 +43,10 @@ public class GamePanel extends JPanel {
      */
     public boolean paused = false;
 
+    // 用于避免 ConcurrentModificationException
+    // 在 updateGame 的最后部分调用
+    private List<Runnable> invokeLater = new LinkedList<>();
+
     /*
      * 关卡相关
      */
@@ -204,18 +208,27 @@ public class GamePanel extends JPanel {
                         // TODO 需要设定游戏数据到上一个 checkpoint
                         init();
                         onStageEntities.clear();
-                        onStageEntities.add(new Block(context, 100, 100));
-                        onStageEntities.add(new Block(context, 200, 60));
-                        onStageEntities.add(new Block(context, 216, 60));
-                        onStageEntities.add(new Block(context, 250, 80));
-                        onStageEntities.add(new Block(context, 184, 150));
-                        onStageEntities.add(new Block(context, 200, 150));
-                        onStageEntities.add(new Block(context, 216, 150));
-                        onStageEntities.add(new Block(context, 232, 150));
-                        onStageEntities.add(new Block(context, 232, 110));
-                        onStageEntities.add(new Block(context, 248, 150));
-                        onStageEntities.add(new Block(context, 264, 150));
+                        onStageEntities.add(new FragileBlock(context, 100, 100));
+                        onStageEntities.add(new FragileBlock(context, 200, 60));
+                        onStageEntities.add(new FragileBlock(context, 216, 60));
+                        onStageEntities.add(new FragileBlock(context, 250, 80));
+                        onStageEntities.add(new FragileBlock(context, 184, 150));
+                        onStageEntities.add(new FragileBlock(context, 200, 150));
+                        onStageEntities.add(new FragileBlock(context, 216, 150));
+                        onStageEntities.add(new GroundBlock(context, 50, 50, 2, 2));
+                        onStageEntities.add(new FragileBlock(context, 232, 150));
+                        onStageEntities.add(new QuestionBlock(context, 232, 110, (point) -> {
+                            IEntity output = new Flower(context, point.x, 0);
+                            output.setTop(point.y - output.getHeight());
+                            output.activate();
+                            return output;
+                        }, (entity) -> invokeLater.add(() -> onStageEntities.add(entity))));
+                        onStageEntities.add(new FragileBlock(context, 248, 150));
+                        onStageEntities.add(new FragileBlock(context, 264, 150));
                         onStageEntities.add(new Goomba(context, 264, 120));
+                        onStageEntities.add(new Bullet(context, 264, 100, 16.0));
+                        for (IEntity entity : onStageEntities)
+                            entity.activate();
                         player = new Mario(context, 100, 99, () -> {
                             playerLife--;
                             setState(GameState.LIFE_SPLASH);
@@ -285,7 +298,6 @@ public class GamePanel extends JPanel {
         Graphics2D g = output.createGraphics();
         g.clearRect(0, 0, getWidth(), getHeight());
 
-        List<Runnable> invokeLater = new LinkedList<>();
         long timestamp = System.currentTimeMillis();
 
         if (player.getState() != EntityState.DEAD && player.getState() != EntityState.DISPOSED) {
@@ -409,6 +421,7 @@ public class GamePanel extends JPanel {
         // 一切有效信息就绪后，命令 Mario 跳帧
         for (Runnable r : invokeLater)
             r.run(); // 在跳帧之前，先处理延迟的事务
+        invokeLater.clear(); // 然后清空
         player.tick(context.TARGET_TPF);
 
         // TODO 把右边的对象放到画面 list 中
@@ -515,8 +528,6 @@ public class GamePanel extends JPanel {
             direction = null;
         }
         //endregion
-        if (direction == Direction.UPWARDS)
-            System.out.print("");
         return direction;
     }
 

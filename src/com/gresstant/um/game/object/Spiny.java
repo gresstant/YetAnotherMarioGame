@@ -1,16 +1,15 @@
 package com.gresstant.um.game.object;
 
 import com.gresstant.um.game.Context;
-import com.gresstant.um.game.map.MapBase;
 
 import java.awt.image.BufferedImage;
 
-public class Goomba extends EnemyAdapter {
-    public Goomba(Context context, double x, double y) {
+public class Spiny extends EnemyAdapter {
+    public Spiny(Context context, double x, double y) {
         super(context, 16.0);
         height = 16.0;
         width = 16.0;
-        imgBuffer = context.imgRes.getResource("GOOMBA$NORMAL$WALK");
+        imgBuffer = context.imgRes.getResource("SPINY$NORMAL$WALK");
         horzAlign = HorzAlign.CENTER;
         vertAlign = VertAlign.BOTTOM;
         setLeft(x);
@@ -37,9 +36,7 @@ public class Goomba extends EnemyAdapter {
 
     @Override public boolean collideDownwards(boolean[] keyArray, IEntity entity) {
         if (entity instanceof Mario) {
-            die(0, null);
-            ((Mario) entity).bottomSupported = true;
-            ((Mario) entity).tryJump(System.currentTimeMillis());
+            ((Mario) entity).die();
         }
         return false;
     }
@@ -66,7 +63,6 @@ public class Goomba extends EnemyAdapter {
             case STILL:
             case DEAD:
             case STAND:
-                return context.imgRes.getResource("GOOMBA$NORMAL$OVER")[0];
             case FROZEN:
             case RUN:
             case JUMP:
