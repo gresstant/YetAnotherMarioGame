@@ -29,22 +29,22 @@ public interface IEntity {
      * 在检测到玩家从下方向上方碰撞时被调用
      * @return 返回值指示是否阻挡玩家前进
      */
-    boolean collideUpwards(boolean[] keyArray, Mario player);
+    boolean collideUpwards(boolean[] keyArray, IEntity entity);
     /**
      * 在检测到玩家从上方向下方碰撞时被调用
      * @return 返回值指示是否阻挡玩家前进
      */
-    boolean collideDownwards(boolean[] keyArray, Mario player);
+    boolean collideDownwards(boolean[] keyArray, IEntity entity);
     /**
      * 在检测到玩家从右方向左方碰撞时被调用
      * @return 返回值指示是否阻挡玩家前进
      */
-    boolean collideLeftwards(boolean[] keyArray, Mario player);
+    boolean collideLeftwards(boolean[] keyArray, IEntity entity);
     /**
      * 在检测到玩家从左方向右方碰撞时被调用
      * @return 返回值指示是否阻挡玩家前进
      */
-    boolean collideRightwards(boolean[] keyArray, Mario player);
+    boolean collideRightwards(boolean[] keyArray, IEntity entity);
 
     BufferedImage getImage();
 

@@ -314,19 +314,19 @@ public class Mario extends EntityAdapter {
         setState(EntityState.DISPOSED);
     }
 
-    @Override public boolean collideUpwards(boolean[] keyArray, Mario player) {
+    @Override public boolean collideUpwards(boolean[] keyArray, IEntity entity) {
         throw new RuntimeException("can't collide itself!");
     }
 
-    @Override public boolean collideDownwards(boolean[] keyArray, Mario player) {
+    @Override public boolean collideDownwards(boolean[] keyArray, IEntity entity) {
         throw new RuntimeException("can't collide itself!");
     }
 
-    @Override public boolean collideLeftwards(boolean[] keyArray, Mario player) {
+    @Override public boolean collideLeftwards(boolean[] keyArray, IEntity entity) {
         throw new RuntimeException("can't collide itself!");
     }
 
-    @Override public boolean collideRightwards(boolean[] keyArray, Mario player) {
+    @Override public boolean collideRightwards(boolean[] keyArray, IEntity entity) {
         throw new RuntimeException("can't collide itself!");
     }
 }

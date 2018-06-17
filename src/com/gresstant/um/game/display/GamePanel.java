@@ -375,16 +375,16 @@ public class GamePanel extends JPanel {
                     if (!(eState == EntityState.FROZEN || eState == EntityState.DISPOSED || eState == EntityState.DEAD) /*&&
                             Utilities.intersect(entity, e)*/) {
                         Direction d = collidedDirection(entity, e, dx, dy);
-                        if (d == Direction.LEFTWARDS) {
+                        if (d == Direction.LEFTWARDS && e.collideLeftwards(pressedKeys, entity)) {
                             ((IEnemy) entity).barrierLeft();
                             entity.setLeft(e.getRight() + 0.01);
-                        } else if (d == Direction.RIGHTWARDS) {
+                        } else if (d == Direction.RIGHTWARDS && e.collideRightwards(pressedKeys, entity)) {
                             ((IEnemy) entity).barrierRight();
                             entity.setRight(e.getLeft() - 0.01);
-                        } else if (d == Direction.UPWARDS) {
+                        } else if (d == Direction.UPWARDS && e.collideUpwards(pressedKeys, entity)) {
                             ((IEnemy) entity).barrierTop();
                             entity.setTop(e.getBottom() + 0.01);
-                        } else if (d == Direction.DOWNWARDS) {
+                        } else if (d == Direction.DOWNWARDS && e.collideDownwards(pressedKeys, entity)) {
                             ((IEnemy) entity).barrierBottom();
                             entity.setBottom(e.getTop() /*- 0.01*/);
                         }// else continue

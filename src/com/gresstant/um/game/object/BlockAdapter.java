@@ -11,19 +11,19 @@ public abstract class BlockAdapter extends EntityAdapter implements IBlock {
 
     @Override public void tick(int ms) {}
 
-    @Override public boolean collideUpwards(boolean[] keyArray, Mario player) {
+    @Override public boolean collideUpwards(boolean[] keyArray, IEntity entity) {
         return true;
     }
 
-    @Override public boolean collideDownwards(boolean[] keyArray, Mario player) {
+    @Override public boolean collideDownwards(boolean[] keyArray, IEntity entity) {
         return true;
     }
 
-    @Override public boolean collideLeftwards(boolean[] keyArray, Mario player) {
+    @Override public boolean collideLeftwards(boolean[] keyArray, IEntity entity) {
         return true;
     }
 
-    @Override public boolean collideRightwards(boolean[] keyArray, Mario player) {
+    @Override public boolean collideRightwards(boolean[] keyArray, IEntity entity) {
         return true;
     }
 }

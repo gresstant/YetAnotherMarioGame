@@ -132,11 +132,13 @@ public class Block extends BlockAdapter {
         return output;
     }
 
-    @Override public boolean collideUpwards(boolean[] keyArray, Mario player) {
-        if (player.getGrowth() == Mario.GrowthState.SMALL) {
-            setAnimation(1);
-        } else {
-            die(System.currentTimeMillis(), null);
+    @Override public boolean collideUpwards(boolean[] keyArray, IEntity entity) {
+        if (entity instanceof Mario) {
+            if (((Mario) entity).getGrowth() == Mario.GrowthState.SMALL) {
+                setAnimation(1);
+            } else {
+                die(System.currentTimeMillis(), null);
+            }
         }
         return true;
     }

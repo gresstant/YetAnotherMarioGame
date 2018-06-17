@@ -1,6 +1,7 @@
 package com.gresstant.um.game.object;
 
 import com.gresstant.um.game.Context;
+import com.gresstant.um.game.map.MapBase;
 
 import java.awt.image.BufferedImage;
 
@@ -29,25 +30,32 @@ public class Goomba extends EnemyAdapter {
         dispose();
     }
 
-    @Override public boolean collideUpwards(boolean[] keyArray, Mario player) {
-        player.die();
+    @Override public boolean collideUpwards(boolean[] keyArray, IEntity entity) {
+        if (entity instanceof Mario)
+            ((Mario) entity).die();
         return false;
     }
 
-    @Override public boolean collideDownwards(boolean[] keyArray, Mario player) {
-        die(0, null);
-        player.bottomSupported = true;
-        player.tryJump(System.currentTimeMillis());
+    @Override public boolean collideDownwards(boolean[] keyArray, IEntity entity) {
+        if (entity instanceof Mario) {
+            die(0, null);
+            ((Mario) entity).bottomSupported = true;
+            ((Mario) entity).tryJump(System.currentTimeMillis());
+        }
         return false;
     }
 
-    @Override public boolean collideLeftwards(boolean[] keyArray, Mario player) {
-        player.die();
+    @Override public boolean collideLeftwards(boolean[] keyArray, IEntity entity) {
+        if (entity instanceof Mario) {
+            ((Mario) entity).die();
+        }
         return false;
     }
 
-    @Override public boolean collideRightwards(boolean[] keyArray, Mario player) {
-        player.die();
+    @Override public boolean collideRightwards(boolean[] keyArray, IEntity entity) {
+        if (entity instanceof Mario) {
+            ((Mario) entity).die();
+        }
         return false;
     }
 
