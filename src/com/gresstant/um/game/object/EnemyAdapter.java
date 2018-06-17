@@ -43,15 +43,17 @@ public abstract class EnemyAdapter extends EntityAdapter implements IEnemy {
     }
 
     @Override public void tick(int ms) {
+        double time = ms / 1000.0;
+
         if (speedX < 0.0 && leftSupported || speedX > 0.0 && rightSupported)
             speedX = -speedX;
-        if (!bottomSupported && speedY < context.maxFallSpeed) {
-            speedY += context.gravity;
-        } else {
+        if (topSupported)
+            speedY = Math.min(Math.abs(speedY), context.maxFallSpeed);
+        if (bottomSupported) {
             speedY = 0;
+        } else if (speedY < context.maxFallSpeed) {
+            speedY += context.gravity * time;
         }
-
-        double time = ms / 1000.0;
 
         x += speedX * time;
         y += speedY * time;

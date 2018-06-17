@@ -199,7 +199,7 @@ public class Mario extends EntityAdapter {
         y += (oldSpeedY + speedY) * second / 2.0;
 
         // 更新状态
-        if (!bottomSupported /*|| Math.abs(speedY) < 0.001*/) { // 脚下悬空即判定为跳跃
+        if (!bottomSupported && (Math.abs(speedY) > context.gravity * second || state == EntityState.JUMP)) { // 脚下悬空，且速度超过一定值(或之前为跳跃)即判定为跳跃
             state = EntityState.JUMP;
         } else if (Math.abs(speedX) < 0.001) { // 针对浮点数，判断 speedX == 0
             state = EntityState.STAND;

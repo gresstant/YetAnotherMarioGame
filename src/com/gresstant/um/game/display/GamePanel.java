@@ -327,9 +327,13 @@ public class GamePanel extends JPanel {
             EntityState playerState = player.getState();
             EntityState entityState = entity.getState();
             if (!(playerState == EntityState.DEAD || playerState == EntityState.DISPOSED) &&
-                    !(entityState == EntityState.FROZEN || entityState == EntityState.DISPOSED || entityState == EntityState.DEAD) &&
-                    Utilities.collide(player, entity, player.speedX, player.speedY, context.TARGET_TPF)) {
-                Direction direction = collidedDirection(nextVC, nextHC, playerRatio, entity);
+                    !(entityState == EntityState.FROZEN || entityState == EntityState.DISPOSED || entityState == EntityState.DEAD) /*&&
+                    Utilities.collide(player, entity, player.speedX, player.speedY, context.TARGET_TPF)*/) {
+                if (entity.getTop() > 500.0) {
+                    entity.dispose();
+                    continue;
+                }
+                Direction direction = collidedDirection(player, entity, displaceX, displaceY); //collidedDirection(nextVC, nextHC, playerRatio, entity);
                 if (direction != null) switch (direction) {
                     case RIGHTWARDS:
                         if (player.speedX >= 0 && entity.collideRightwards(pressedKeys, player)) {
@@ -357,21 +361,20 @@ public class GamePanel extends JPanel {
                     case DOWNWARDS:
                         if (player.speedY >= 0 && entity.collideDownwards(pressedKeys, player)) {
                             player.bottomSupported = true;
-                            player.setBottom(entity.getTop() + 0.01);
+                            player.setBottom(entity.getTop() /*+ 0.01*/);
                         }
                         break;
                 }
             }
             if (entity instanceof IEnemy) {
+                double dx = ((IEnemy) entity).getSpeedX() * context.TARGET_TPF / 1000.0;
+                double dy = ((IEnemy) entity).getSpeedY() * context.TARGET_TPF / 1000.0;
                 for (IEntity e : onStageEntities) {
                     if (e == entity) continue;
                     EntityState eState = e.getState();
-                    if (!(eState == EntityState.FROZEN || eState == EntityState.DISPOSED || eState == EntityState.DEAD) &&
-                            Utilities.intersect(entity, e)) {
-                        Direction d = collidedDirection(entity.getVertCenter() + ((IEnemy) entity).getSpeedX(),
-                                entity.getHorzCenter() + ((IEnemy) entity).getSpeedY(),
-                                entity.getHeight() / entity.getWidth(), e);
-                        System.out.println(d);
+                    if (!(eState == EntityState.FROZEN || eState == EntityState.DISPOSED || eState == EntityState.DEAD) /*&&
+                            Utilities.intersect(entity, e)*/) {
+                        Direction d = collidedDirection(entity, e, dx, dy);
                         if (d == Direction.LEFTWARDS) {
                             ((IEnemy) entity).barrierLeft();
                             entity.setLeft(e.getRight() + 0.01);
@@ -380,19 +383,27 @@ public class GamePanel extends JPanel {
                             entity.setRight(e.getLeft() - 0.01);
                         } else if (d == Direction.UPWARDS) {
                             ((IEnemy) entity).barrierTop();
-                            //entity.setTop(e.getBottom() + 0.01);
+                            entity.setTop(e.getBottom() + 0.01);
                         } else if (d == Direction.DOWNWARDS) {
                             ((IEnemy) entity).barrierBottom();
-                            entity.setBottom(e.getTop() - 0.01);
+                            entity.setBottom(e.getTop() /*- 0.01*/);
                         }// else continue
                     }
                 }
             }
-            if (entity.getState() != EntityState.FROZEN && entity.getState() != EntityState.DISPOSED)
+            if (player.getState() != EntityState.DEAD && entity.getState() != EntityState.FROZEN && entity.getState() != EntityState.DISPOSED)
                 entity.tick(context.TARGET_TPF);
             BufferedImage eImg = entity.getImage();
-            if (eImg != null)
+            if (eImg != null) {
                 g.drawImage(eImg, (int) (entity.getLeft() + entity.getImgOffsetX()) - stageX, (int) (entity.getTop() + entity.getImgOffsetY()), null);
+                if (entity instanceof IEnemy) {
+                    g.setColor(Color.WHITE);
+                    g.drawLine((int) entity.getLeft() - stageX, 0, (int) entity.getLeft() - stageX, stageHeight);
+                    g.drawLine(0, (int) entity.getTop(), stageWidth, (int) entity.getTop());
+                    g.drawLine((int) entity.getRight() - stageX, 0, (int) entity.getRight() - stageX, stageHeight);
+                    g.drawLine(0, (int) entity.getBottom(), stageWidth, (int) entity.getBottom());
+                }
+            }
         }
 
         // 一切有效信息就绪后，命令 Mario 跳帧
@@ -422,9 +433,16 @@ public class GamePanel extends JPanel {
         return output;
     }
 
-    public Direction collidedDirection(IEntity e1, IEntity e2, double speedX, double speedY) {
-        return collidedDirection(e1.getVertCenter() + speedX,
-                e1.getHorzCenter() + speedY,
+    public Direction collidedDirection(IEntity e1, IEntity e2, double displaceX, double displaceY) {
+        if (!Utilities.collide(e1, e2, displaceX, displaceY)) {
+            if (Utilities.collide(e1, e2, displaceX, displaceY - 0.1)) {
+                return Direction.DOWNWARDS;
+            } else {
+                return null;
+            }
+        }
+        return collidedDirection(e1.getVertCenter() + displaceX,
+                e1.getHorzCenter() + displaceY,
                 e1.getHeight() / e1.getWidth(),
                 e2);
     }
@@ -497,6 +515,8 @@ public class GamePanel extends JPanel {
             direction = null;
         }
         //endregion
+        if (direction == Direction.UPWARDS)
+            System.out.print("");
         return direction;
     }
 

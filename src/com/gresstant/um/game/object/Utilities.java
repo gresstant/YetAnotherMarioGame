@@ -23,12 +23,12 @@ public class Utilities {
     /**
      * 判断按当前运动速度，下一帧是否会产生碰撞
      * 注意不会判断当前帧是否会碰撞
-     * @param speedX 两物体间横向相对速度，向右为正方向
-     * @param speedY 两物体间纵向相对速度，向下为正方向
+     * @param displaceX 两物体间横向相对速度，向右为正方向
+     * @param displaceY 两物体间纵向相对速度，向下为正方向
      */
-    public static boolean collide(IEntity obj1, IEntity obj2, double speedX, double speedY, int tpf) {
-        boolean out = intersect(obj1.getLeft() + speedX * tpf / 1000.0, obj1.getRight() + speedX * tpf / 1000.0,
-                obj1.getTop() + speedY * tpf / 1000.0, obj1.getBottom() + speedY * tpf / 1000.0,
+    public static boolean collide(IEntity obj1, IEntity obj2, double displaceX, double displaceY) {
+        boolean out = intersect(obj1.getLeft() + displaceX, obj1.getRight() + displaceX,
+                obj1.getTop() + displaceY, obj1.getBottom() + displaceY,
                 obj2.getLeft(), obj2.getRight(), obj2.getTop(), obj2.getBottom());
         if (!out) return false;
         return true;

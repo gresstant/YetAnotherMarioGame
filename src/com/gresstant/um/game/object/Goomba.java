@@ -9,7 +9,7 @@ public class Goomba extends EnemyAdapter {
         super(context, 16.0);
         this.x = x;
         this.y = y;
-        height = 15.5;
+        height = 16.0;
         width = 16.0;
         state = EntityState.RUN;
         imgBuffer = context.imgRes.getResource("GOOMBA$NORMAL$WALK");
