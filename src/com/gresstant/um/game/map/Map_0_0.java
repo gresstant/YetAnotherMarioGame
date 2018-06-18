@@ -21,6 +21,8 @@ public class Map_0_0 extends MapBase {
     protected int width;
     public int marioX, marioY;
     public Color bgColor;
+    public double[] checkpointXs;
+    public double[] checkpointYs;
 
     public int winX;
 

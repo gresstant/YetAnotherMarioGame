@@ -9,6 +9,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.*;
+import java.util.List;
 import java.util.function.*;
 
 public class MapReader {
@@ -86,6 +88,7 @@ public class MapReader {
         for (int i = 0; i < 2; i++) fis.read();// 0x0016, 0x0017
 
         boolean normal = false; // 指示是否正常退出
+        List<Point2D.Double> chkpointBuffer = new ArrayList<>();
         int got;
         outer: while ((got = fis.read()) != -1) {
             switch (got) {
@@ -262,7 +265,10 @@ public class MapReader {
                     throw new RuntimeException("not implemented");
                 }
                 case 0x30: {
-                    throw new RuntimeException("not implemented");
+                    int x = readShort(fis);
+                    int y = readShort(fis);
+                    chkpointBuffer.add(new Point2D.Double(x, y));
+                    break;
                 }
                 default: {
                     throw new BadFormatException();
@@ -271,6 +277,12 @@ public class MapReader {
         }
 
         if (!normal) throw new BadFormatException();
+        output.checkpointXs = new double[chkpointBuffer.size()];
+        output.checkpointYs = new double[chkpointBuffer.size()];
+        for (int i = 0; i < output.checkpointXs.length; i++) {
+            output.checkpointXs[i] = chkpointBuffer.get(i).x;
+            output.checkpointYs[i] = chkpointBuffer.get(i).y;
+        }
         return output;
     }
 }
