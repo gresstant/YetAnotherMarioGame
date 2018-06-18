@@ -3,10 +3,12 @@ package com.gresstant.um.game.display;
 import com.gresstant.um.game.object.Utilities;
 
 import javax.imageio.ImageIO;
+import javax.sound.midi.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Resource<T> implements IResource<T> {
@@ -99,6 +101,23 @@ public class Resource<T> implements IResource<T> {
                 img.getSubimage(408, 160, 16, 16),
                 img.getSubimage(390, 160, 16, 16)});
         output.storage.put("QUESTION$NORMAL$WALK",new BufferedImage[] {img.getSubimage(373, 65, 16, 16)}); // 顶过的问号
+
+        return output;
+    }
+
+    public static Resource<Sequence> loadMidi(List<File> f) {
+        Resource<Sequence> output = new Resource<>();
+        for (File file : f) {
+            try {
+                String name = file.getName();
+                if (name.endsWith(".mid"))
+                    name = name.substring(0, name.length() - 4);
+                output.storage.put(name, new Sequence[] {MidiSystem.getSequence(file)});
+                System.out.println("[LoadMIDI] \"" + name + "\" now contains " + file.getAbsolutePath());
+            } catch (Exception ex) {
+                System.out.println("[LoadMIDI] \"" + ex.getMessage() + "\" occurred while loading " + file.getAbsolutePath());
+            }
+        }
 
         return output;
     }

@@ -96,6 +96,8 @@ public class GamePanel extends JPanel {
                     "expected structure version: 0, 0\n" +
                     "read structure version: " + currentMap.getStructVerMajor() + ", " + currentMap.getStructVerMinor());
 
+        stageX = 0;
+
         Map_0_0 mapRef = (Map_0_0) currentMap;
 
         mapWidth = mapRef.getWidth();
@@ -193,9 +195,11 @@ public class GamePanel extends JPanel {
                     } else if (timeElapsed < 3000) { // 1.75s - 3s
                         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1 - (timeElapsed / 1000.0f - 1.75f) / 1.25f));
                     } else {
-                        if (!context.imgResFuture.isDone()) break;
+                        if (!context.imgResFuture.isDone() || !context.midiResFuture.isDone())
+                            break;
                         try {
                             context.imgRes = context.imgResFuture.get();
+                            context.midiRes = context.midiResFuture.get();
                         } catch (Exception e) {
                             e.printStackTrace();
                             System.exit(-1);
@@ -233,6 +237,7 @@ public class GamePanel extends JPanel {
                 }
                 case LIFE_SPLASH: {
                     if (frameElapsed == 0) { // 第一帧，用于初始化
+                        context.bgmPlayer.tryStop();
                         System.out.println("LIFE INIT");
                         g.dispose();
                         g = screenBuffer.createGraphics();
@@ -284,6 +289,7 @@ public class GamePanel extends JPanel {
 //                        });
 //                        player.activate();
 //                        player.setGrowth(Mario.GrowthState.SMALL);
+                        context.bgmPlayer.playLoop(context.midiRes.getResource("overworld")[0]);
                         setState(GameState.IN_GAME);
                         break;
                     }

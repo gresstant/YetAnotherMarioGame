@@ -37,9 +37,10 @@ public class Goomba extends EnemyAdapter {
 
     @Override public boolean collideDownwards(boolean[] keyArray, IEntity entity) {
         if (entity instanceof Mario) {
+            context.oggPlayer.apply("humi.ogg");
             die(0, null);
             ((Mario) entity).bottomSupported = true;
-            ((Mario) entity).tryJump(System.currentTimeMillis());
+            ((Mario) entity).tinyJump(System.currentTimeMillis());
         }
         return false;
     }
@@ -70,7 +71,7 @@ public class Goomba extends EnemyAdapter {
             case FROZEN:
             case RUN:
             case JUMP:
-                return imgBuffer[(int) x / 4 % 2];
+                return imgBuffer[Math.abs((int) x / 4 % 2)];
         }
         return null;
     }

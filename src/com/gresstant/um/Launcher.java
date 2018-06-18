@@ -1,21 +1,37 @@
 package com.gresstant.um;
 
-import com.gresstant.um.game.Context;
-import com.gresstant.um.game.display.GamePanel;
-import com.gresstant.um.game.display.GameState;
-import com.gresstant.um.game.display.Resource;
+import com.gresstant.um.game.*;
+import com.gresstant.um.game.display.*;
+import com.gresstant.um.game.midi.*;
 
+import javax.sound.midi.MidiChannel;
+import javax.sound.midi.MidiSystem;
 import javax.swing.*;
 import java.awt.event.*;
 import java.io.File;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Launcher {
     public static void main(String[] args) throws Exception {
         JFrame f = new JFrame();
         Context context = new Context();
         context.imgResFuture = context.threadPool.submit(() -> Resource.loadImg(new File("res\\obj.png")));
+        context.midiResFuture = context.threadPool.submit(() -> {
+            context.bgmPlayer = new MIDIPlayer();
+            context.sePlayer = new MIDIPlayer();
+            context.midiSynthesizer = MidiSystem.getSynthesizer();
+            for (MidiChannel channel : context.midiSynthesizer.getChannels()) {
+                channel.setMute(false);
+                channel.controlChange(7, 127);
+            }
+            List<File> fileList = new ArrayList<>();
+            for (File file : new File("res").listFiles()) {
+                if (file.isFile() && file.getName().endsWith(".mid"))
+                    fileList.add(file);
+            }
+            return Resource.loadMidi(fileList);
+        });
         GamePanel game = new GamePanel(context);
         f.setContentPane(game);
         f.setLocationByPlatform(true);

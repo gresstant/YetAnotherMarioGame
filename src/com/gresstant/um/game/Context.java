@@ -1,12 +1,20 @@
 package com.gresstant.um.game;
 
 import com.gresstant.um.game.display.Resource;
+import com.gresstant.um.game.midi.MIDIPlayer;
+import org.newdawn.easyogg.OggClip;
 
+import javax.sound.midi.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class Context {
     /**
@@ -34,6 +42,35 @@ public class Context {
      * 图像资源库。在游戏加载完毕后，值不应当为 null
      */
     public Resource<BufferedImage> imgRes = null;
+
+    public Future<Resource<Sequence>> midiResFuture;
+    public Resource<Sequence> midiRes = null;
+    public MIDIPlayer bgmPlayer;
+    public MIDIPlayer sePlayer;
+    public Synthesizer midiSynthesizer;
+
+    private List<OggClip> oggClips = new LinkedList<>();
+    public Function<String, OggClip> oggPlayer = (oggName) -> {
+        try {
+            File file = new File("res", oggName);
+            FileInputStream fis = new FileInputStream(file);
+            OggClip oggClip = new OggClip(fis);
+            oggClip.play();
+
+            ListIterator<OggClip> oggIter = oggClips.listIterator();
+            while (oggIter.hasNext()) {
+                OggClip got = oggIter.next();
+                if (got.stopped()) {
+                    got.close();
+                    oggIter.remove();
+                }
+            }
+
+            oggClips.add(oggClip);
+            return oggClip;
+        } catch (Exception ignore) {}
+        return null;
+    };
 
     public ExecutorService threadPool = Executors.newFixedThreadPool(16);
 

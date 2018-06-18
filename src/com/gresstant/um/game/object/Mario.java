@@ -226,10 +226,10 @@ public class Mario extends EntityAdapter {
         // assert dieTimestamp != 0;
         dieTimer += ms;
         long animeTimer = dieTimer;//System.currentTimeMillis() - dieTimestamp;
-        if (animeTimer <= 1000) {
+        if (animeTimer <= 600) {
             // do nothing
-        } else if (animeTimer <= 5000) {
-            double time = animeTimer / 1000.0 - 1.0;
+        } else if (animeTimer <= 3000) {
+            double time = animeTimer / 1000.0 - 0.6;
             imgOffsetAdjustY = context.marioJumpSpeed * 1.5 * time + context.gravity * time * time / 2.0;
         } else {
             // TODO dispose
@@ -261,11 +261,17 @@ public class Mario extends EntityAdapter {
     public void tryJump(long timestamp) {
         if (topSupported) return;
         if (bottomSupported) {
+            context.oggPlayer.apply("jump.ogg");
             speedY = context.marioJumpSpeed;
             lastJumpTimestamp = timestamp;
         } else if (timestamp - lastJumpTimestamp <= 200 && state == EntityState.JUMP) {
             speedY = context.marioJumpSpeed - (timestamp - lastJumpTimestamp) / 2.5;
         }
+    }
+
+    public void tinyJump(long timestamp) {
+        speedY = context.marioJumpSpeed / 2.0;
+        lastJumpTimestamp = timestamp;
     }
 
     public void trySquat(boolean val) {
@@ -280,6 +286,8 @@ public class Mario extends EntityAdapter {
     private Runnable dieCallback = null;
 
     public void die() {
+        context.bgmPlayer.tryStop();
+        context.sePlayer.playOnce(context.midiRes.getResource("death")[0]);
         state = EntityState.DEAD;
         setGrowth(GrowthState.SMALL);
     }
