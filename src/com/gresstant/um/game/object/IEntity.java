@@ -4,7 +4,7 @@ import com.sun.istack.internal.Nullable;
 
 import java.awt.image.BufferedImage;
 
-public interface IEntity {
+public interface IEntity extends Cloneable {
     double getLeft();
     double getVertCenter();
     double getRight();
@@ -24,6 +24,8 @@ public interface IEntity {
     void activate();
     void dispose();
     void die(long timestamp, @Nullable Runnable callback);
+
+    IEntity copy();
 
     /**
      * 在检测到玩家从下方向上方碰撞时被调用

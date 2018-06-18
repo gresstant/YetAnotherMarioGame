@@ -237,4 +237,12 @@ public abstract class EntityAdapter implements IEntity {
     @Override public double getImgOffsetY() {
         return getImgOffsetY(getImage().getHeight());
     }
+
+    @Override public IEntity copy() {
+        try {
+            return (IEntity) clone();
+        } catch (Exception ex) {
+            return null;
+        }
+    }
 }

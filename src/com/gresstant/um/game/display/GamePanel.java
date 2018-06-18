@@ -114,8 +114,10 @@ public class GamePanel extends JPanel {
         onStageEntities.clear();
         comingEntities.clear();
 
-        comingEntities.addAll(mapRef.getBlocks());
-        comingEntities.addAll(mapRef.getEnemies());
+        for (IEntity entity : mapRef.getBlocks())
+            comingEntities.add(entity.copy());
+        for (IEntity entity : mapRef.getEnemies())
+            comingEntities.add(entity.copy());
 
         scanAndActivate();
         scanAndDispose();
