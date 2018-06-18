@@ -16,7 +16,7 @@ public class Launcher {
         JFrame f = new JFrame();
         Context context = new Context();
         context.imgResFuture = context.threadPool.submit(() -> Resource.loadImg(new File("res\\obj.png")));
-        GamePanel game = new GamePanel(context, Resource.loadImg(new File("res\\obj.png")));
+        GamePanel game = new GamePanel(context);
         f.setContentPane(game);
         f.setLocationByPlatform(true);
         f.setTitle("Ultimate Mario");

@@ -28,11 +28,7 @@ public class GamePanel extends JPanel {
     /**
      * 程序的上下文设置（不包含关卡相关的信息）
      */
-    private final Context context;
-    /**
-     * 图像资源库。完成异步加载功能后应当删除此变量。
-     */
-    private Resource<BufferedImage> res;
+    public final Context context;
     /**
      * 按键检测相关。
      * 由父级写入数据。
@@ -76,9 +72,8 @@ public class GamePanel extends JPanel {
     public Mario player;
     public int playerLife = 3;
 
-    public GamePanel(Context context, Resource<BufferedImage> res) {
+    public GamePanel(Context context) {
         this.context = context;
-        this.res = res; // 在进行异步加载部分的开发之前，暂时保留这个参数
         setPreferredSize(new Dimension(800, 600));
     }
 
@@ -192,7 +187,7 @@ public class GamePanel extends JPanel {
 
                         BufferedImage small = new BufferedImage(stageWidth, stageHeight, BufferedImage.TYPE_INT_ARGB);
                         Graphics2D gs = small.createGraphics();
-                        gs.drawImage(res.getResource("MARIO$SMALL$STAND")[0], 160, 150 - 8, null);
+                        gs.drawImage(context.imgRes.getResource("MARIO$SMALL$STAND")[0], 160, 150 - 8, null);
                         gs.setFont(new Font(g.getFont().getName(), Font.PLAIN, 16));
                         gs.drawString("X", 190, 150 + 7);
                         gs.drawString(String.valueOf(playerLife), 215, 150 + 7);
@@ -222,7 +217,8 @@ public class GamePanel extends JPanel {
                             output.setTop(point.y - output.getHeight());
                             output.activate();
                             return output;
-                        }, (entity) -> invokeLater.add(() -> onStageEntities.add(entity))));
+                        }, (entity) -> invokeLater.add(() -> onStageEntities.add(entity)),
+                                context.imgRes.getResource("QUESTION$NORMAL$STAND")));
                         onStageEntities.add(new FragileBlock(context, 248, 150));
                         onStageEntities.add(new FragileBlock(context, 264, 150));
                         onStageEntities.add(new Goomba(context, 264, 120));

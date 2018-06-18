@@ -9,7 +9,7 @@ import java.util.function.*;
 
 public class QuestionBlock extends BlockAdapter {
     private EntityState state = EntityState.FROZEN;
-    private BufferedImage imgBuffer;
+    private BufferedImage[] imgBuffer;
     private Consumer<IEntity> callback;
     private Function<Point2D.Double, IEntity> factory;
 
@@ -19,7 +19,7 @@ public class QuestionBlock extends BlockAdapter {
 
     private boolean plundered = false;
 
-    public QuestionBlock(Context context, int x, int y, Function<Point2D.Double, IEntity> factory, Consumer<IEntity> callback) {
+    public QuestionBlock(Context context, int x, int y, Function<Point2D.Double, IEntity> factory, Consumer<IEntity> callback, BufferedImage[] appearance) {
         this.context = context;
         this.callback = callback;
         this.factory = factory;
@@ -30,7 +30,7 @@ public class QuestionBlock extends BlockAdapter {
         height = 16.0;
         setLeft(x);
         setTop(y);
-        imgBuffer = context.imgRes.getResource("QUESTION$NORMAL$STAND")[0];
+        imgBuffer = appearance; // context.imgRes.getResource("QUESTION$NORMAL$STAND")[0];
     }
 
     @Override public void tick(int ms) {
@@ -41,7 +41,7 @@ public class QuestionBlock extends BlockAdapter {
             } else if (animeTimer < 200){
                 if (!plundered) {
                     plundered = true;
-                    imgBuffer = context.imgRes.getResource("QUESTION$NORMAL$WALK")[0];
+                    imgBuffer = context.imgRes.getResource("QUESTION$NORMAL$WALK");
                     callback.accept(factory.apply(new Point2D.Double(getLeft(), getTop())));
                 }
                 imgOffsetAdjustY = (animeTimer - 200.0) / 25.0;
@@ -76,7 +76,7 @@ public class QuestionBlock extends BlockAdapter {
             case FROZEN:
             case STILL:
             case DEAD:
-                return imgBuffer;
+                return imgBuffer[0];
             case DISPOSED:
                 return null;
             default:
