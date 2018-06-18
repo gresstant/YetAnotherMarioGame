@@ -305,6 +305,20 @@ public class Mario extends EntityAdapter {
         die();
     }
 
+    public void hurt() {
+        switch (getGrowth()) {
+            case SMALL:
+                die();
+                break;
+            case BIG:
+                setGrowth(GrowthState.SMALL);
+                break;
+            case BULLET:
+                setGrowth(GrowthState.BIG);
+                break;
+        }
+    }
+
     @Override public double getHeight() {
         if (squating)
             return super.getHeight() / 2.0;

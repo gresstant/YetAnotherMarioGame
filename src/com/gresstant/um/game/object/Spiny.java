@@ -30,27 +30,27 @@ public class Spiny extends EnemyAdapter {
 
     @Override public boolean collideUpwards(boolean[] keyArray, IEntity entity) {
         if (entity instanceof Mario)
-            ((Mario) entity).die();
+            ((Mario) entity).hurt();
         return false;
     }
 
     @Override public boolean collideDownwards(boolean[] keyArray, IEntity entity) {
         if (entity instanceof Mario) {
-            ((Mario) entity).die();
+            ((Mario) entity).hurt();
         }
         return false;
     }
 
     @Override public boolean collideLeftwards(boolean[] keyArray, IEntity entity) {
         if (entity instanceof Mario) {
-            ((Mario) entity).die();
+            ((Mario) entity).hurt();
         }
         return false;
     }
 
     @Override public boolean collideRightwards(boolean[] keyArray, IEntity entity) {
         if (entity instanceof Mario) {
-            ((Mario) entity).die();
+            ((Mario) entity).hurt();
         }
         return false;
     }
