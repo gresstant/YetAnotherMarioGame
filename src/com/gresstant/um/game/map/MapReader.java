@@ -134,9 +134,7 @@ public class MapReader {
                         case 0x00:
                             throw new RuntimeException("coin not implemented");
                         case 0x01:
-                            factory = _328DB4_FactoryFactory(mrContext.player.getGrowth() == Mario.GrowthState.SMALL ?
-                                    new RedMushroom(mrContext.context, true, 0, 0) :
-                                    new Flower(mrContext.context, 0, 0));
+                            factory = _328DB4_FactoryFactory(new RMFJudger(mrContext.context, 0, 0, mrContext.marioSupplier, mrContext.addEntityLater));
                             break;
                         case 0x02:
                             factory = _328DB4_FactoryFactory(new GreenMushroom(mrContext.context, true, 0, 0, mrContext.lifeIncrement));
@@ -262,7 +260,10 @@ public class MapReader {
                     break;
                 }
                 case 0x27: {
-                    throw new RuntimeException("not implemented");
+                    int x = readShort(fis);
+                    int y = readShort(fis);
+                    output.enemies.add(new RMFJudger(mrContext.context, x, y, mrContext.marioSupplier, mrContext.addEntityLater));
+                    break;
                 }
                 case 0x30: {
                     int x = readShort(fis);

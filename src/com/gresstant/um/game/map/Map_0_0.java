@@ -8,11 +8,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class Map_0_0 extends MapBase {
-    @Override byte getStructVerMajor() {
+    @Override public byte getStructVerMajor() {
         return 0;
     }
 
-    @Override byte getStructVerMinor() {
+    @Override public byte getStructVerMinor() {
         return 0;
     }
 

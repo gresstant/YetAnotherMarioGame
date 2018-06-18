@@ -62,11 +62,11 @@ public class Mario extends EntityAdapter {
 
     public Mario(Context context, double x, double y, Runnable dieCallback) {
         this.context = context;
-        this.x = x;
-        this.y = y;
-        setGrowth(GrowthState.SMALL);
         horzAlign = HorzAlign.CENTER;
         vertAlign = VertAlign.BOTTOM;
+        setLeft(x);
+        setTop(y);
+        setGrowth(GrowthState.SMALL);
         this.dieCallback = dieCallback;
     }
 

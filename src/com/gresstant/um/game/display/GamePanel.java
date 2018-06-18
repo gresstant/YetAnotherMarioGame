@@ -1,6 +1,10 @@
 package com.gresstant.um.game.display;
 
 import com.gresstant.um.game.Context;
+import com.gresstant.um.game.map.MapBase;
+import com.gresstant.um.game.map.MapReader;
+import com.gresstant.um.game.map.MapReaderContext;
+import com.gresstant.um.game.map.Map_0_0;
 import com.gresstant.um.game.object.*;
 
 import javax.imageio.ImageIO;
@@ -47,12 +51,12 @@ public class GamePanel extends JPanel {
      * 关卡相关
      */
 
-    /**
-     * 舞台外、左侧的实体
-     * 内存占用过多时，可以考虑删除这些实体
-     * 但是如果没实力的话还是不要这样干比较好
-     */
-    public LinkedList<IEntity> pastEntities = new LinkedList<>();
+    private MapBase currentMap;
+    private int chkpointID = -1; // TODO checkpoint 待实装
+//    /**
+//     * 舞台外、左侧的实体
+//     */
+//    public LinkedList<IEntity> pastEntities = new LinkedList<>(); // 后来我发现这些实体直接销毁就好了那么麻烦干什么
     /**
      * 舞台内的实体
      * 这部分实体应当正常更新
@@ -69,8 +73,11 @@ public class GamePanel extends JPanel {
     public int stageX = 0;
     public final int stageWidth = 400, stageHeight = 300;
     public int mapWidth = 440;
+    public int winWidth; // TODO 胜利待实装
+    public Color bgColor;
     public Mario player;
     public int playerLife = 3;
+    public final Runnable marioDieCallback = () -> { playerLife--; setState(GameState.LIFE_SPLASH); };
 
     public GamePanel(Context context) {
         this.context = context;
@@ -78,10 +85,45 @@ public class GamePanel extends JPanel {
     }
 
     /**
-     * 初始化
+     * 根据地图和复活点信息初始化舞台。
+     * 调用此函数要求地图不为空。
      */
     private void init() {
-        stageX = 0;
+        if (currentMap == null)
+            throw new RuntimeException("current map is null");
+        if (currentMap.getStructVerMajor() != 0 || currentMap.getStructVerMinor() > 0 || !(currentMap instanceof Map_0_0))
+            throw new RuntimeException("unsupported map structure version\n" +
+                    "expected structure version: 0, 0\n" +
+                    "read structure version: " + currentMap.getStructVerMajor() + ", " + currentMap.getStructVerMinor());
+
+        Map_0_0 mapRef = (Map_0_0) currentMap;
+
+        mapWidth = mapRef.getWidth();
+        winWidth = mapRef.winX;
+        bgColor = mapRef.bgColor;
+
+        double playerX = chkpointID == -1 ? mapRef.marioX : mapRef.checkpointXs[chkpointID];
+        double playerY = chkpointID == -1 ? mapRef.marioY : mapRef.checkpointYs[chkpointID];
+        player = new Mario(context, playerX, playerY, marioDieCallback);
+//        player.setGrowth(Mario.GrowthState.SMALL);
+        player.activate();
+
+//        pastEntities.clear();
+        onStageEntities.clear();
+        comingEntities.clear();
+
+        comingEntities.addAll(mapRef.getBlocks());
+        comingEntities.addAll(mapRef.getEnemies());
+
+        scanAndActivate();
+        scanAndDispose();
+    }
+
+    /**
+     * 在马里奥生命数耗尽时调用，用于重置关卡数据
+     */
+    private void gameOver() {
+        chkpointID = -1;
     }
 
     /**
@@ -106,6 +148,13 @@ public class GamePanel extends JPanel {
 
         // cache 用于储存不用每次重绘的画面，需要在第一帧时初始化
         BufferedImage[] cache = null;
+
+        MapReaderContext MRC = new MapReaderContext();
+        MRC.context = context;
+        MRC.addEntityLater = (entity) -> invokeLater.add(() -> comingEntities.add(entity));
+        MRC.lifeIncrement = () -> playerLife++;
+        MRC.marioSupplier = () -> player; // 这样写可以保证或得到的始终有效
+        MapReader mapReader = new MapReader(MRC);
 
         // 游戏主循环
         mainLoop: while (true) {
@@ -169,11 +218,16 @@ public class GamePanel extends JPanel {
                     g.clearRect(0, 0, getWidth(), getHeight());
                     //updateGame();
                     g.setColor(Color.BLACK);
-                    if (pressedKeys[KeyEvent.VK_ENTER]) {
-                        // TODO 这里需要初始化游戏
-                        setState(GameState.LIFE_SPLASH);
-                    }
                     g.setFont(new Font(g.getFont().getName(), Font.PLAIN, 48));
+                    if (pressedKeys[KeyEvent.VK_ENTER]) {
+                        try {
+                            currentMap = mapReader.read(context.mapFile);
+                            setState(GameState.LIFE_SPLASH);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            JOptionPane.showMessageDialog(this, ex.toString(), "Exception", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
                     g.drawString("Press Enter to start!", 0, 600);
                     break;
                 }
@@ -200,37 +254,36 @@ public class GamePanel extends JPanel {
                     if (timeElapsed < 1000) { // 0s - 1s
                         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                     } else {
-                        // TODO 需要设定游戏数据到上一个 checkpoint
                         init();
-                        onStageEntities.clear();
-                        onStageEntities.add(new FragileBlock(context, 100, 100));
-                        onStageEntities.add(new FragileBlock(context, 200, 60));
-                        onStageEntities.add(new FragileBlock(context, 216, 60));
-                        onStageEntities.add(new FragileBlock(context, 250, 80));
-                        onStageEntities.add(new FragileBlock(context, 184, 150));
-                        onStageEntities.add(new FragileBlock(context, 200, 150));
-                        onStageEntities.add(new FragileBlock(context, 216, 150));
-                        onStageEntities.add(new GroundBlock(context, 50, 50, 2, 2));
-                        onStageEntities.add(new FragileBlock(context, 232, 150));
-                        onStageEntities.add(new QuestionBlock(context, 232, 110, (point) -> {
-                            IEntity output = new Flower(context, point.x, 0);
-                            output.setTop(point.y - output.getHeight());
-                            output.activate();
-                            return output;
-                        }, (entity) -> invokeLater.add(() -> onStageEntities.add(entity)),
-                                context.imgRes.getResource("QUESTION$NORMAL$STAND")));
-                        onStageEntities.add(new FragileBlock(context, 248, 150));
-                        onStageEntities.add(new FragileBlock(context, 264, 150));
-                        onStageEntities.add(new Goomba(context, 264, 120));
-                        onStageEntities.add(new Bullet(context, 264, 100, 16.0));
-                        for (IEntity entity : onStageEntities)
-                            entity.activate();
-                        player = new Mario(context, 100, 99, () -> {
-                            playerLife--;
-                            setState(GameState.LIFE_SPLASH);
-                        });
-                        player.activate();
-                        player.setGrowth(Mario.GrowthState.SMALL);
+//                        onStageEntities.clear();
+//                        onStageEntities.add(new FragileBlock(context, 100, 100));
+//                        onStageEntities.add(new FragileBlock(context, 200, 60));
+//                        onStageEntities.add(new FragileBlock(context, 216, 60));
+//                        onStageEntities.add(new FragileBlock(context, 250, 80));
+//                        onStageEntities.add(new FragileBlock(context, 184, 150));
+//                        onStageEntities.add(new FragileBlock(context, 200, 150));
+//                        onStageEntities.add(new FragileBlock(context, 216, 150));
+//                        onStageEntities.add(new GroundBlock(context, 50, 50, 2, 2));
+//                        onStageEntities.add(new FragileBlock(context, 232, 150));
+//                        onStageEntities.add(new QuestionBlock(context, 232, 110, (point) -> {
+//                            IEntity output = new Flower(context, point.x, 0);
+//                            output.setTop(point.y - output.getHeight());
+//                            output.activate();
+//                            return output;
+//                        }, (entity) -> invokeLater.add(() -> onStageEntities.add(entity)),
+//                                context.imgRes.getResource("QUESTION$NORMAL$STAND")));
+//                        onStageEntities.add(new FragileBlock(context, 248, 150));
+//                        onStageEntities.add(new FragileBlock(context, 264, 150));
+//                        onStageEntities.add(new Goomba(context, 264, 120));
+//                        onStageEntities.add(new Bullet(context, 264, 100, 16.0));
+//                        for (IEntity entity : onStageEntities)
+//                            entity.activate();
+//                        player = new Mario(context, 100, 99, () -> {
+//                            playerLife--;
+//                            setState(GameState.LIFE_SPLASH);
+//                        });
+//                        player.activate();
+//                        player.setGrowth(Mario.GrowthState.SMALL);
                         setState(GameState.IN_GAME);
                         break;
                     }
@@ -292,13 +345,14 @@ public class GamePanel extends JPanel {
     private BufferedImage updateGame() {
         BufferedImage output = new BufferedImage(stageWidth, stageHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = output.createGraphics();
+        g.setBackground(bgColor); // 这里的性能可以优化一下
         g.clearRect(0, 0, getWidth(), getHeight());
 
         long timestamp = System.currentTimeMillis();
 
         if (player.getState() != EntityState.DEAD && player.getState() != EntityState.DISPOSED) {
             // 死亡判定 + 检查自杀按键
-            if (player.getBottom() > 200.0 || pressedKeys[KeyEvent.VK_O]) {
+            if (player.getBottom() > 400.0 || pressedKeys[KeyEvent.VK_O]) {
                 player.die();
             }
             // 更新蹲的状态，这个值不会在 tick 中被重置
@@ -332,10 +386,14 @@ public class GamePanel extends JPanel {
 
         // 真·碰撞检测，顺便把实体画出来
         for (IEntity entity : onStageEntities) {
-            EntityState playerState = player.getState();
             EntityState entityState = entity.getState();
+            if (entityState == EntityState.DISPOSED) {
+                invokeLater.add(() -> onStageEntities.remove(entity));
+                continue;
+            }
+            EntityState playerState = player.getState();
             if (!(playerState == EntityState.DEAD || playerState == EntityState.DISPOSED) &&
-                    !(entityState == EntityState.FROZEN || entityState == EntityState.DISPOSED || entityState == EntityState.DEAD) /*&&
+                    !(entityState == EntityState.FROZEN /*|| entityState == EntityState.DISPOSED*/ || entityState == EntityState.DEAD) /*&&
                     Utilities.collide(player, entity, player.speedX, player.speedY, context.TARGET_TPF)*/) {
                 if (entity.getTop() > 500.0) {
                     entity.dispose();
@@ -414,32 +472,59 @@ public class GamePanel extends JPanel {
             }
         }
 
-        // 一切有效信息就绪后，命令 Mario 跳帧
+        // 处理延迟的事务
         for (Runnable r : invokeLater)
-            r.run(); // 在跳帧之前，先处理延迟的事务
+            r.run();
         invokeLater.clear(); // 然后清空
+
+        // 在列表间移动实体
+        scanAndActivate();
+        scanAndDispose();
+
+        // 一切有效信息就绪后，命令 Mario 跳帧
         player.tick(context.TARGET_TPF);
 
-        // TODO 把右边的对象放到画面 list 中
-        // TODO 把移出画面的对象移出 list
-
-        // TODO 实装碰撞检测后，删除这一部分
-        g.setColor(Color.YELLOW);
-        g.drawLine(0, 200, stageWidth, 200);
-        g.setColor(Color.WHITE);
-        g.drawLine((int) player.getLeft() - stageX, 0, (int) player.getLeft() - stageX, stageHeight);
-        g.drawLine(0, (int) player.getTop(), stageWidth, (int) player.getTop());
-        g.drawLine((int) player.getRight() - stageX, 0, (int) player.getRight() - stageX, stageHeight);
-        g.drawLine(0, (int) player.getBottom(), stageWidth, (int) player.getBottom());
-        g.setColor(Color.MAGENTA);
-        g.drawString("Top: " + player.getTop(), 0, (int) player.getTop());
-        g.drawString("Bottom: " + player.getBottom(), 0, (int) player.getBottom());
-        g.drawString("Left: " + player.getLeft(), (int) player.getLeft() - stageX, stageHeight - 12);
-        g.drawString("Right: " + player.getRight(), (int) player.getRight() - stageX, stageHeight);
+//        g.setColor(player.getState() == EntityState.DEAD ? Color.RED : Color.WHITE);
+//        g.drawLine((int) player.getLeft() - stageX, 0, (int) player.getLeft() - stageX, stageHeight);
+//        g.drawLine(0, (int) player.getTop(), stageWidth, (int) player.getTop());
+//        g.drawLine((int) player.getRight() - stageX, 0, (int) player.getRight() - stageX, stageHeight);
+//        g.drawLine(0, (int) player.getBottom(), stageWidth, (int) player.getBottom());
+//        g.setColor(Color.MAGENTA);
+//        g.drawString("Top: " + player.getTop(), 0, (int) player.getTop());
+//        g.drawString("Bottom: " + player.getBottom(), 0, (int) player.getBottom());
+//        g.drawString("Left: " + player.getLeft(), (int) player.getLeft() - stageX, stageHeight - 12);
+//        g.drawString("Right: " + player.getRight(), (int) player.getRight() - stageX, stageHeight);
 
         if (player.getState() != EntityState.DISPOSED)
             g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()) - stageX, (int) (player.getTop() + player.getImgOffsetY()), null);
         return output;
+    }
+
+    /**
+     * 激活 comingEntities 中已经进入舞台的实体
+     */
+    private void scanAndActivate() {
+        int stageRight = stageX + stageWidth;
+        ListIterator<IEntity> iter = comingEntities.listIterator();
+        while (iter.hasNext()) {
+            IEntity got = iter.next();
+            if (got.getLeft() <= stageRight) {
+                iter.remove();
+                onStageEntities.add(got);
+                got.activate();
+            }
+        }
+    }
+
+    /**
+     * 销毁 onStageEntites 中已经离开舞台的实体
+     */
+    private void scanAndDispose() {
+        for (IEntity entity : onStageEntities) {
+            if (entity.getRight() < stageX) {
+                entity.dispose();
+            }
+        }
     }
 
     public Direction collidedDirection(IEntity e1, IEntity e2, double displaceX, double displaceY) {

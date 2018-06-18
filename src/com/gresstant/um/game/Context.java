@@ -3,6 +3,7 @@ package com.gresstant.um.game;
 import com.gresstant.um.game.display.Resource;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -62,4 +63,6 @@ public class Context {
      * 是否跳过 logo splash
      */
     public boolean skipLogoSplash = true;
+
+    public File mapFile = new File("D:\\Downloads\\Bz162\\Bz162\\A.MAP");
 }
