@@ -106,15 +106,14 @@ public class Context {
     /**
      * 用于获取地图文件的函数
      */
-    public Supplier<File> mapSupplier = () -> new File("C:\\Users\\lilid\\Documents\\Tencent Files\\1460813018\\FileRecv\\A.MAP");
+    public Supplier<File> mapSupplier;
+
+    public Runnable mapChooser;
 
     /**
      * 读取地图文件遇到错误时，会回调此函数，然后根据返回值判断是否再次尝试读取。
      */
-    public Predicate<Exception> mapReadExceptionCallback = (ex) -> {
-            JOptionPane.showMessageDialog(null, "读取地图文件时发生错误\n\n" + ex.toString());
-            return false;
-    };
+    public Predicate<Exception> mapReadExceptionCallback;
 
     /**
      * 地图胜利时调用，然后根据返回值判断是否继续游戏

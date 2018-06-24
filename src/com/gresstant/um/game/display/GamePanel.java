@@ -169,7 +169,7 @@ public class GamePanel extends JPanel {
 
         // 游戏主循环
         mainLoop: while (true) {
-            if (paused) {
+            if (paused && state != GameState.EXITING) {
                 try { Thread.sleep(100); } catch (Exception ignore) {}
                 continue mainLoop;
             }
@@ -260,11 +260,11 @@ public class GamePanel extends JPanel {
                                 ex.printStackTrace();
                                 if (context.mapReadExceptionCallback != null && context.mapReadExceptionCallback.test(ex))
                                     i--; // 条件符合则再来一次循环，不符合则这轮循环结束就出去
-//                                JOptionPane.showMessageDialog(this, ex.toString(), "Exception", JOptionPane.ERROR_MESSAGE);
+                                pressedKeys[KeyEvent.VK_ENTER] = false;
                             }
                         }
                     } else if (pressedKeys[KeyEvent.VK_F12]) {
-                        JOptionPane.showMessageDialog(this, "No option available yet. ");
+                        context.mapChooser.run();
                         pressedKeys[KeyEvent.VK_F12] = false;
                     } else if (pressedKeys[KeyEvent.VK_ESCAPE]) {
                         setState(GameState.EXITING);
@@ -281,10 +281,16 @@ public class GamePanel extends JPanel {
 
                         BufferedImage small = new BufferedImage(stageWidth, stageHeight, BufferedImage.TYPE_INT_ARGB);
                         Graphics2D gs = small.createGraphics();
-                        gs.drawImage(context.imgRes.getResource("MARIO$SMALL$STAND")[0], 160, 150 - 8, null);
-                        gs.setFont(new Font(g.getFont().getName(), Font.PLAIN, 16));
-                        gs.drawString("X", 190, 150 + 7);
-                        gs.drawString(String.valueOf(playerLife), 215, 150 + 7);
+                        if (playerLife >= 0) {
+                            gs.drawImage(context.imgRes.getResource("MARIO$SMALL$STAND")[0], 160, 150 - 8, null);
+                            gs.setFont(new Font(g.getFont().getName(), Font.PLAIN, 16));
+                            gs.drawString("X", 190, 150 + 7);
+                            gs.drawString(String.valueOf(playerLife), 215, 150 + 7);
+                        } else {
+                            context.bgmPlayer.playOnce(context.midiRes.getResource("game-over")[0]);
+                            gs.setFont(new Font(g.getFont().getName(), Font.PLAIN, 16));
+                            gs.drawString("GAME OVER", 150, 150 + 7);
+                        }
 
                         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
                         g.drawImage(small, 0, 0, 800, 600, null);
@@ -297,7 +303,7 @@ public class GamePanel extends JPanel {
                     int timeElapsed = frameElapsed * context.TARGET_TPF; // 单位为毫秒
                     if (timeElapsed < 1000) { // 0s - 1s
                         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-                    } else {
+                    } else if (playerLife >= 0) {
                         init();
 //                        onStageEntities.clear();
 //                        onStageEntities.add(new FragileBlock(context, 100, 100));
@@ -330,6 +336,9 @@ public class GamePanel extends JPanel {
 //                        player.setGrowth(Mario.GrowthState.SMALL);
                         context.bgmPlayer.playLoop(context.midiRes.getResource("overworld")[0]);
                         setState(GameState.IN_GAME);
+                        break;
+                    } else if (timeElapsed > 10000) {
+                        setState(GameState.START_SCREEN);
                         break;
                     }
                     //g.drawImage(splash, 0, 0, null);
