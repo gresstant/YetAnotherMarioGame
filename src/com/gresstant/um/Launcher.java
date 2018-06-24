@@ -32,6 +32,14 @@ public class Launcher {
             }
             return Resource.loadMidi(fileList);
         });
+        context.exitCallback = () -> {
+            f.setTitle("EXITING ...");
+            context.threadPool.shutdown();
+            context.bgmPlayer.dispose();
+            context.sePlayer.dispose();
+            f.dispose();
+            System.exit(0);
+        };
         GamePanel game = new GamePanel(context);
         f.setContentPane(game);
         f.setLocationByPlatform(true);
@@ -40,9 +48,6 @@ public class Launcher {
         f.setResizable(false);
         f.addWindowListener(new WindowAdapter() {
             @Override public void windowClosing(WindowEvent e) {
-                f.setTitle("EXITING ...");
-                context.exitCallback = f::dispose; // 这样可以保证游戏结束后再关闭窗口，避免 getGraphics 出错
-                context.threadPool.shutdown();
                 game.setState(GameState.EXITING);
             }
         });

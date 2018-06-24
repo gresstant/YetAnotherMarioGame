@@ -99,7 +99,7 @@ public class Context {
     /**
      * 是否跳过 logo splash
      */
-    public boolean skipLogoSplash = true;
+    public boolean skipLogoSplash = false;
 
     public File mapFile = new File("D:\\Downloads\\Bz162\\Bz162\\A.MAP");
 }

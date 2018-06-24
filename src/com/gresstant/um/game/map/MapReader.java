@@ -217,6 +217,12 @@ public class MapReader {
                     output.enemies.add(new Bullet(mrContext.context, x, y, speedRefined));
                     break;
                 }
+                case 0x14: {
+                    int x = readShort(fis);
+                    int y = readShort(fis);
+                    output.enemies.add(new Spiny(mrContext.context, x, y));
+                    break;
+                }
                 case 0x20: {
                     int x = readShort(fis);
                     int y = readShort(fis);

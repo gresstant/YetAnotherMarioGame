@@ -74,6 +74,7 @@ public class GamePanel extends JPanel {
     public final int stageWidth = 400, stageHeight = 300;
     public int mapWidth = 440;
     public int winWidth; // TODO 胜利待实装
+    public long winTimer = -1;
     public Color bgColor;
     public Mario player;
     public int playerLife = 3;
@@ -97,6 +98,7 @@ public class GamePanel extends JPanel {
                     "read structure version: " + currentMap.getStructVerMajor() + ", " + currentMap.getStructVerMinor());
 
         stageX = 0;
+        winTimer = -1;
 
         Map_0_0 mapRef = (Map_0_0) currentMap;
 
@@ -143,15 +145,19 @@ public class GamePanel extends JPanel {
         Graphics2D gLog = screenBuffer.createGraphics();
         gLog.setColor(Color.RED);
 
-        BufferedImage bi = null;
+        BufferedImage bi = null, bi2 = null;
         try {
             bi = ImageIO.read(new File("res\\whitek.png"));
+            bi2 = ImageIO.read(new File("res\\startscreen.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         // cache 用于储存不用每次重绘的画面，需要在第一帧时初始化
         BufferedImage[] cache = null;
+
+        // 指示是否不需要重绘画面
+        boolean delayPaint = false;
 
         MapReaderContext MRC = new MapReaderContext();
         MRC.context = context;
@@ -180,11 +186,14 @@ public class GamePanel extends JPanel {
                 case LOGO_SPLASH: {
                     // 感觉这一部分可以包装成一个方法
                     if (frameElapsed == 0) { // 第一帧，用于初始化
+                        delayPaint = false;
                         if (context.skipLogoSplash)
                             frameElapsed += 100000;
                         g.dispose();
                         g = screenBuffer.createGraphics();
                         g.setBackground(Color.WHITE);
+                        g.setColor(Color.BLACK);
+                        g.setFont(new Font(g.getFont().getName(), Font.PLAIN, 48));
                     }
 
                     BufferedImage splash = bi;
@@ -197,8 +206,11 @@ public class GamePanel extends JPanel {
                     } else if (timeElapsed < 3000) { // 1.75s - 3s
                         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1 - (timeElapsed / 1000.0f - 1.75f) / 1.25f));
                     } else {
-                        if (!context.imgResFuture.isDone() || !context.midiResFuture.isDone())
+                        if (!context.imgResFuture.isDone() || !context.midiResFuture.isDone()) {
+                            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                            g.drawString("Loading ...", 16, 584);
                             break;
+                        }
                         try {
                             context.imgRes = context.imgResFuture.get();
                             context.midiRes = context.midiResFuture.get();
@@ -218,13 +230,26 @@ public class GamePanel extends JPanel {
                         g.dispose();
                         g = screenBuffer.createGraphics();
                         g.setBackground(Color.WHITE);
+
+                        g.clearRect(0, 0, getWidth(), getHeight());
+//                        g.setColor(Color.BLACK);
+//                        g.setFont(new Font(g.getFont().getName(), Font.PLAIN, 48));
+//                        g.drawString("Ultimate Mario (Preview)", 16, 64);
+//                        g.drawString("Press Enter to start!", 16, 488);
+//                        g.drawString("Press F1 to edit options!", 16, 536);
+//                        g.drawString("Press Escape to exit!", 16, 584);
+//                        g.setFont(new Font(g.getFont().getName(), Font.PLAIN, 16));
+//                        g.drawString("Proudly brought to you by Gresstant & HxPowerShare", 16, 88);
+//                        g.drawString("For codes, check GitHub gresstant/YetAnotherMarioGame.", 16, 104);
+//                        g.drawString("Visit http://um.gresstant.com/ to get details.", 16, 120);
+                        g.drawImage(bi2, 0, 0, null);
+
+                        delayPaint = false;
                         frameElapsed++;
+                    } else {
+                        delayPaint = true;
                     }
 
-                    g.clearRect(0, 0, getWidth(), getHeight());
-                    //updateGame();
-                    g.setColor(Color.BLACK);
-                    g.setFont(new Font(g.getFont().getName(), Font.PLAIN, 48));
                     if (pressedKeys[KeyEvent.VK_ENTER]) {
                         try {
                             currentMap = mapReader.read(context.mapFile);
@@ -233,8 +258,12 @@ public class GamePanel extends JPanel {
                             ex.printStackTrace();
                             JOptionPane.showMessageDialog(this, ex.toString(), "Exception", JOptionPane.ERROR_MESSAGE);
                         }
+                    } else if (pressedKeys[KeyEvent.VK_F12]) {
+                        JOptionPane.showMessageDialog(this, "No option available yet. ");
+                        pressedKeys[KeyEvent.VK_F12] = false;
+                    } else if (pressedKeys[KeyEvent.VK_ESCAPE]) {
+                        setState(GameState.EXITING);
                     }
-                    g.drawString("Press Enter to start!", 0, 600);
                     break;
                 }
                 case LIFE_SPLASH: {
@@ -255,6 +284,10 @@ public class GamePanel extends JPanel {
 
                         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
                         g.drawImage(small, 0, 0, 800, 600, null);
+
+                        delayPaint = false;
+                    } else {
+                        delayPaint = true;
                     }
 
                     int timeElapsed = frameElapsed * context.TARGET_TPF; // 单位为毫秒
@@ -304,6 +337,7 @@ public class GamePanel extends JPanel {
                         g.dispose();
                         g = screenBuffer.createGraphics();
                         g.setBackground(Color.WHITE);
+                        delayPaint = false;
                     }
                     g.clearRect(0, 0, getWidth(), getHeight());
                     g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
@@ -315,10 +349,12 @@ public class GamePanel extends JPanel {
 
             lasting = System.currentTimeMillis() - beginTimestamp;
 
-            gLog.drawString("FPS: " + String.format("%.1f", 1 / (Math.max(lasting, context.TARGET_TPF) / 1000.0)), 0, 15);
-            gLog.drawString("timeElapsed: " + (frameElapsed * context.TARGET_TPF), 0, 30);
-            gLog.drawString("sleep: " + (context.TARGET_TPF - lasting), 0, 45);
-            getGraphics().drawImage(screenBuffer, 0, 0, null);
+            if (!delayPaint) {
+                gLog.drawString("FPS: " + String.format("%.1f", 1 / (Math.max(lasting, context.TARGET_TPF) / 1000.0)), 0, 15);
+                gLog.drawString("timeElapsed: " + (frameElapsed * context.TARGET_TPF), 0, 30);
+                gLog.drawString("sleep: " + (context.TARGET_TPF - lasting), 0, 45);
+                getGraphics().drawImage(screenBuffer, 0, 0, null);
+            }
 
             // 进行到这里时可能刚刚进行了状态切换
             // 所以不要把 frameElapsed++ 放到这里
@@ -358,22 +394,42 @@ public class GamePanel extends JPanel {
 
         long timestamp = System.currentTimeMillis();
 
+        // 胜利判定
+        if (player.getRight() >= winWidth && winTimer == -1) {
+            winTimer = 0;
+            context.bgmPlayer.playOnce(context.midiRes.getResource("level-complete")[0]); // MIDI似乎会变慢，原因不明
+        }
+        if (winTimer >= 7000) {
+            winTimer = -1;
+            context.bgmPlayer.tryStop();
+            context.sePlayer.tryStop();
+            player.dispose();
+            JOptionPane.showMessageDialog(this, "You win!");
+            setState(GameState.START_SCREEN);
+        } else if (winTimer >= 0) {
+            player.speedX = 12.0;
+            player.accX = 0.0;
+            winTimer += context.TARGET_TPF;
+        }
+
         if (player.getState() != EntityState.DEAD && player.getState() != EntityState.DISPOSED) {
             // 死亡判定 + 检查自杀按键
             if (player.getBottom() > 400.0 || pressedKeys[KeyEvent.VK_O]) {
                 player.die();
             }
-            // 更新蹲的状态，这个值不会在 tick 中被重置
-            player.trySquat(pressedKeys[KeyEvent.VK_DOWN]);
-            // 检查移动+跳跃按键，注意这一部分需要放到检查蹲之后
-            if (pressedKeys[KeyEvent.VK_RIGHT])
-                player.accelerate(1.0);
-            if (pressedKeys[KeyEvent.VK_LEFT])
-                player.accelerate(-1.0);
-            if (pressedKeys[KeyEvent.VK_Z])
-                invokeLater.add(() -> player.tryJump(timestamp));
+            if (winTimer == -1) {
+                // 更新蹲的状态，这个值不会在 tick 中被重置
+                player.trySquat(pressedKeys[KeyEvent.VK_DOWN]);
+                // 检查移动+跳跃按键，注意这一部分需要放到检查蹲之后
+                if (pressedKeys[KeyEvent.VK_RIGHT])
+                    player.accelerate(1.0);
+                if (pressedKeys[KeyEvent.VK_LEFT])
+                    player.accelerate(-1.0);
+                if (pressedKeys[KeyEvent.VK_Z])
+                    invokeLater.add(() -> player.tryJump(timestamp));
 
-            player.run = pressedKeys[KeyEvent.VK_X];
+                player.run = pressedKeys[KeyEvent.VK_X];
+            }
         }
 
         // 计算出本帧玩家的大致位置
@@ -470,13 +526,6 @@ public class GamePanel extends JPanel {
             BufferedImage eImg = entity.getImage();
             if (eImg != null) {
                 g.drawImage(eImg, (int) (entity.getLeft() + entity.getImgOffsetX()) - stageX, (int) (entity.getTop() + entity.getImgOffsetY()), null);
-                if (entity instanceof IEnemy) {
-                    g.setColor(Color.WHITE);
-                    g.drawLine((int) entity.getLeft() - stageX, 0, (int) entity.getLeft() - stageX, stageHeight);
-                    g.drawLine(0, (int) entity.getTop(), stageWidth, (int) entity.getTop());
-                    g.drawLine((int) entity.getRight() - stageX, 0, (int) entity.getRight() - stageX, stageHeight);
-                    g.drawLine(0, (int) entity.getBottom(), stageWidth, (int) entity.getBottom());
-                }
             }
         }
 
@@ -491,17 +540,6 @@ public class GamePanel extends JPanel {
 
         // 一切有效信息就绪后，命令 Mario 跳帧
         player.tick(context.TARGET_TPF);
-
-//        g.setColor(player.getState() == EntityState.DEAD ? Color.RED : Color.WHITE);
-//        g.drawLine((int) player.getLeft() - stageX, 0, (int) player.getLeft() - stageX, stageHeight);
-//        g.drawLine(0, (int) player.getTop(), stageWidth, (int) player.getTop());
-//        g.drawLine((int) player.getRight() - stageX, 0, (int) player.getRight() - stageX, stageHeight);
-//        g.drawLine(0, (int) player.getBottom(), stageWidth, (int) player.getBottom());
-//        g.setColor(Color.MAGENTA);
-//        g.drawString("Top: " + player.getTop(), 0, (int) player.getTop());
-//        g.drawString("Bottom: " + player.getBottom(), 0, (int) player.getBottom());
-//        g.drawString("Left: " + player.getLeft(), (int) player.getLeft() - stageX, stageHeight - 12);
-//        g.drawString("Right: " + player.getRight(), (int) player.getRight() - stageX, stageHeight);
 
         if (player.getState() != EntityState.DISPOSED)
             g.drawImage(player.getImage(), (int) (player.getLeft() + player.getImgOffsetX()) - stageX, (int) (player.getTop() + player.getImgOffsetY()), null);

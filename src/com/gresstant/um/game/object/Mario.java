@@ -118,7 +118,6 @@ public class Mario extends EntityAdapter {
     @Override public BufferedImage getImage() {
         switch (state) {
             case FROZEN:
-            case DISPOSED:
                 return getResource("MARIO$" + growthString + "$STAND", false)[0];
             case STAND:
                 if (squating) return getResource("MARIO$" + growthString + "$SQUAT", !faceRight)[0];
@@ -132,6 +131,8 @@ public class Mario extends EntityAdapter {
                 return getResource("MARIO$" + growthString + "$JUMP", !faceRight)[0];
             case DEAD:
                 return getResource("MARIO$SMALL$OVER", !faceRight)[0];
+            case DISPOSED:
+                return null;
             default:
                 throw new RuntimeException();
         }
