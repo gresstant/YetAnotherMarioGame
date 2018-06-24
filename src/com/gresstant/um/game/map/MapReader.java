@@ -5,10 +5,7 @@ import com.gresstant.um.game.object.*;
 import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 import java.util.List;
 import java.util.function.*;
@@ -58,7 +55,7 @@ public class MapReader {
         return (point) -> {
             generated.setTop(point.y - generated.getHeight());
             generated.setLeft(point.x);
-            generated.activate();
+            //generated.activate();
             return generated;
         };
     }
@@ -127,31 +124,42 @@ public class MapReader {
                     }
                     //endregion
                     Function<Point2D.Double, IEntity> factory;
-                    //region assigning factory
+                    String se;
+                    //region assigning factory and sound effect
                     switch (generateID) {
                         case -1:
                             throw new BadFormatException();
                         case 0x00:
-                            throw new RuntimeException("coin not implemented");
+                            se = "brockcoin.ogg";
+                            factory = _328DB4_FactoryFactory(new CoinHelper(mrContext.context));
+                            break;
+//                            throw new RuntimeException("coin not implemented");
                         case 0x01:
+                            se = "brockkinoko.ogg";
                             factory = _328DB4_FactoryFactory(new RMFJudger(mrContext.context, 0, 0, mrContext.marioSupplier, mrContext.addEntityLater));
                             break;
                         case 0x02:
+                            se = "brockkinoko.ogg";
                             factory = _328DB4_FactoryFactory(new GreenMushroom(mrContext.context, true, 0, 0, mrContext.lifeIncrement));
                             break;
                         case 0x03:
+                            se = "brockkinoko.ogg";
                             factory = _328DB4_FactoryFactory(new RedMushroom(mrContext.context, true, 0, 0));
                             break;
                         case 0x04:
+                            se = "brockkinoko.ogg";
                             factory = _328DB4_FactoryFactory(new Flower(mrContext.context, 0, 0));
                             break;
                         case 0x05:
-                            factory = (point) -> null;
+                            se = null;
+                            factory = _328DB4_FactoryFactory(new NullObject());
                             break;
                         case 0x10:
+                            se = "brockkinoko.ogg";
                             factory = _328DB4_FactoryFactory(new PurpleMushroom(mrContext.context, true, 0, 0));
                             break;
                         case 0x11:
+                            se = "brockkinoko.ogg";
                             factory = _328DB4_FactoryFactory(new Goomba(mrContext.context, 0, 0));
                             break;
                         case 0x12:
@@ -159,6 +167,7 @@ public class MapReader {
                         case 0x13:
                             throw new RuntimeException("beetle not implemented");
                         case 0x14:
+                            se = "brockkinoko.ogg";
                             factory = _328DB4_FactoryFactory(new Spiny(mrContext.context, 0, 0));
                             break;
                         default:
@@ -166,7 +175,7 @@ public class MapReader {
                     }
                     //endregion
 
-                    output.blocks.add(new QuestionBlock(mrContext.context, x, y, factory, mrContext.addEntityLater, appearance));
+                    output.blocks.add(new QuestionBlock(mrContext.context, x, y, factory, mrContext.addEntityLater, appearance, se));
                     break;
                 }
                 case 0x03: {

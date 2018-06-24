@@ -59,6 +59,7 @@ public class GreenMushroom extends EnemyAdapter {
     }
 
     private void marioCollide() {
+        context.sePlayer.playOnce(context.midiRes.getResource("1up")[0]);
         callback.run();
         dispose();
     }

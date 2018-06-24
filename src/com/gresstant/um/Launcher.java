@@ -66,7 +66,7 @@ public class Launcher {
             }
 
             @Override public void focusLost(FocusEvent e) {
-                game.paused = true; // TODO BUG: 可能会导致一些动画方面的问题
+                game.paused = true;
             }
         });
         f.pack();

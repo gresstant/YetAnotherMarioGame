@@ -138,6 +138,7 @@ public class FragileBlock extends BlockAdapter {
             if (((Mario) entity).getGrowth() == Mario.GrowthState.SMALL) {
                 setAnimation(1);
             } else {
+                context.oggPlayer.apply("brockbreak.ogg");
                 die(System.currentTimeMillis(), null);
             }
         }

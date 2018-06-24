@@ -13,6 +13,8 @@ public class Mario extends EntityAdapter {
     public double accX = 0.0;
     public double accY = 0.0;
 
+    public int invincibleTimer = 0;
+
     /**
      * 是否面向右边
      */
@@ -99,20 +101,26 @@ public class Mario extends EntityAdapter {
 
     private String resBufferKey = "";
     private BufferedImage[] resBufferImg;
+    private BufferedImage[] resBufferInvincible;
     private BufferedImage[] resBufferFlip;
+    private BufferedImage[] resBufferFlipInvincible;
     private BufferedImage[] getResource(String key, boolean flip) {
-        if (key.equals(resBufferKey)) {
-            return flip ? resBufferFlip : resBufferImg;
-        } else {
+        if (!key.equals(resBufferKey)) {
             BufferedImage[] got = context.imgRes.getResource(key);
             if (got == null) return null;
             resBufferKey = key;
             resBufferImg = got;
+            resBufferInvincible = new BufferedImage[resBufferImg.length];
             resBufferFlip = new BufferedImage[resBufferImg.length];
-            for (int i = 0; i < resBufferImg.length; i++)
+            resBufferFlipInvincible = new BufferedImage[resBufferImg.length];
+            for (int i = 0; i < resBufferImg.length; i++) {
+                resBufferInvincible[i] = Utilities.createOpacity(resBufferImg[i], 0.8f);
                 resBufferFlip[i] = Utilities.createHorzFlipped(resBufferImg[i]);
-            return flip ? resBufferFlip : resBufferImg;
+                resBufferFlipInvincible[i] = Utilities.createOpacity(resBufferFlip[i], 0.8f);
+            }
         }
+        return flip ? (invincibleTimer > 0 ? resBufferFlipInvincible : resBufferFlip)
+                : (invincibleTimer > 0 ? resBufferInvincible : resBufferImg);
     }
 
     @Override public BufferedImage getImage() {
@@ -163,6 +171,8 @@ public class Mario extends EntityAdapter {
         double second = ms / 1000.0;
 
         double oldSpeedX = speedX;
+
+        if (invincibleTimer > 0) invincibleTimer -= ms;
 
         // 根据横向加速度调整速度和位置
         if (leftSuported && speedX < 0.0 || rightSuported & speedX > 0.0) {
@@ -307,15 +317,20 @@ public class Mario extends EntityAdapter {
     }
 
     public void hurt() {
+        if (invincibleTimer > 0) return;
         switch (getGrowth()) {
             case SMALL:
                 die();
                 break;
             case BIG:
                 setGrowth(GrowthState.SMALL);
+                invincibleTimer = 1000;
+                context.oggPlayer.apply("dokan.ogg");
                 break;
             case BULLET:
                 setGrowth(GrowthState.BIG);
+                invincibleTimer = 1000;
+                context.oggPlayer.apply("dokan.ogg");
                 break;
         }
     }

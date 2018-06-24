@@ -56,4 +56,12 @@ public class Utilities {
         g.dispose();
         return newImage;
     }
+
+    public static BufferedImage createOpacity(BufferedImage image, float alpha) {
+        BufferedImage newImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = newImage.createGraphics();
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        g.drawImage(image, 0, 0, null);
+        return newImage;
+    }
 }

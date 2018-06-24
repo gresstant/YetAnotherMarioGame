@@ -57,6 +57,7 @@ public class RedMushroom extends EnemyAdapter {
     }
 
     private void marioCollide(Mario player) {
+        context.oggPlayer.apply("dokan.ogg");
         if (player.getGrowth() == Mario.GrowthState.SMALL)
             player.setGrowth(Mario.GrowthState.BIG);
         dispose();

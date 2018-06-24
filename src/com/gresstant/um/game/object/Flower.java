@@ -57,6 +57,7 @@ public class Flower extends EnemyAdapter {
     }
 
     private void marioCollide(Mario player) {
+        context.oggPlayer.apply("dokan.ogg");
         if (player.getGrowth() == Mario.GrowthState.SMALL ||
                 player.getGrowth() == Mario.GrowthState.BIG)
             player.setGrowth(Mario.GrowthState.BULLET);

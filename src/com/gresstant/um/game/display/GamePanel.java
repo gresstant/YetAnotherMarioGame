@@ -159,11 +159,12 @@ public class GamePanel extends JPanel {
         // 指示是否不需要重绘画面
         boolean delayPaint = false;
 
+        // 初始化地图读取模块
         MapReaderContext MRC = new MapReaderContext();
         MRC.context = context;
         MRC.addEntityLater = (entity) -> invokeLater.add(() -> comingEntities.add(entity));
         MRC.lifeIncrement = () -> playerLife++;
-        MRC.marioSupplier = () -> player; // 这样写可以保证或得到的始终有效
+        MRC.marioSupplier = () -> player; // 这样写可以保证得到的始终有效
         MapReader mapReader = new MapReader(MRC);
 
         // 游戏主循环
@@ -251,12 +252,16 @@ public class GamePanel extends JPanel {
                     }
 
                     if (pressedKeys[KeyEvent.VK_ENTER]) {
-                        try {
-                            currentMap = mapReader.read(context.mapFile);
-                            setState(GameState.LIFE_SPLASH);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                            JOptionPane.showMessageDialog(this, ex.toString(), "Exception", JOptionPane.ERROR_MESSAGE);
+                        for (int i = 0; i < 1; i++) {
+                            try {
+                                currentMap = mapReader.read(context.mapSupplier.get());
+                                setState(GameState.LIFE_SPLASH);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                                if (context.mapReadExceptionCallback != null && context.mapReadExceptionCallback.test(ex))
+                                    i--; // 条件符合则再来一次循环，不符合则这轮循环结束就出去
+//                                JOptionPane.showMessageDialog(this, ex.toString(), "Exception", JOptionPane.ERROR_MESSAGE);
+                            }
                         }
                     } else if (pressedKeys[KeyEvent.VK_F12]) {
                         JOptionPane.showMessageDialog(this, "No option available yet. ");
@@ -269,7 +274,6 @@ public class GamePanel extends JPanel {
                 case LIFE_SPLASH: {
                     if (frameElapsed == 0) { // 第一帧，用于初始化
                         context.bgmPlayer.tryStop();
-                        System.out.println("LIFE INIT");
                         g.dispose();
                         g = screenBuffer.createGraphics();
                         g.setBackground(Color.BLACK);
@@ -404,8 +408,7 @@ public class GamePanel extends JPanel {
             context.bgmPlayer.tryStop();
             context.sePlayer.tryStop();
             player.dispose();
-            JOptionPane.showMessageDialog(this, "You win!");
-            setState(GameState.START_SCREEN);
+            setState(context.winCallback != null && context.winCallback.getAsBoolean() ? GameState.LIFE_SPLASH : GameState.START_SCREEN);
         } else if (winTimer >= 0) {
             player.speedX = 12.0;
             player.accX = 0.0;

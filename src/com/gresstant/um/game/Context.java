@@ -1,10 +1,13 @@
 package com.gresstant.um.game;
 
+import com.gresstant.um.game.display.GamePanel;
 import com.gresstant.um.game.display.Resource;
 import com.gresstant.um.game.midi.MIDIPlayer;
 import org.newdawn.easyogg.OggClip;
 
 import javax.sound.midi.*;
+import javax.swing.*;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,8 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.*;
 
 public class Context {
     /**
@@ -101,5 +103,24 @@ public class Context {
      */
     public boolean skipLogoSplash = false;
 
-    public File mapFile = new File("D:\\Downloads\\Bz162\\Bz162\\A.MAP");
+    /**
+     * 用于获取地图文件的函数
+     */
+    public Supplier<File> mapSupplier = () -> new File("C:\\Users\\lilid\\Documents\\Tencent Files\\1460813018\\FileRecv\\A.MAP");
+
+    /**
+     * 读取地图文件遇到错误时，会回调此函数，然后根据返回值判断是否再次尝试读取。
+     */
+    public Predicate<Exception> mapReadExceptionCallback = (ex) -> {
+            JOptionPane.showMessageDialog(null, "读取地图文件时发生错误\n\n" + ex.toString());
+            return false;
+    };
+
+    /**
+     * 地图胜利时调用，然后根据返回值判断是否继续游戏
+     */
+    public BooleanSupplier winCallback = () -> {
+        JOptionPane.showMessageDialog(null, "You win!");
+        return false;
+    };
 }

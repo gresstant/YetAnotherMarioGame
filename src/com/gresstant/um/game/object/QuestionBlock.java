@@ -12,6 +12,7 @@ public class QuestionBlock extends BlockAdapter {
     private BufferedImage[] imgBuffer;
     private Consumer<IEntity> callback;
     private Function<Point2D.Double, IEntity> factory;
+    private String soundStr;
 
     private Context context;
     private boolean anime = false;
@@ -19,10 +20,12 @@ public class QuestionBlock extends BlockAdapter {
 
     private boolean plundered = false;
 
-    public QuestionBlock(Context context, int x, int y, Function<Point2D.Double, IEntity> factory, Consumer<IEntity> callback, BufferedImage[] appearance) {
+    public QuestionBlock(Context context, int x, int y, Function<Point2D.Double, IEntity> factory,
+                         Consumer<IEntity> callback, BufferedImage[] appearance, String soundString) {
         this.context = context;
         this.callback = callback;
         this.factory = factory;
+        this.soundStr = soundString;
 
         horzAlign = HorzAlign.LEFT;
         vertAlign = VertAlign.TOP;
@@ -41,6 +44,7 @@ public class QuestionBlock extends BlockAdapter {
             } else if (animeTimer < 200){
                 if (!plundered) {
                     plundered = true;
+                    if (soundStr != null) context.oggPlayer.apply(soundStr);
                     imgBuffer = context.imgRes.getResource("QUESTION$NORMAL$WALK");
                     callback.accept(factory.apply(new Point2D.Double(getLeft(), getTop())));
                 }
