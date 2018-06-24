@@ -22,6 +22,9 @@ public class RMFJudger extends EnemyAdapter {
         this.marioSupplier = marioSupplier;
         this.addEntityLater = addEntityLater;
 
+        width = 16.0;
+        height = 16.0;
+
         horzAlign = HorzAlign.LEFT;
         vertAlign = VertAlign.TOP;
         setLeft(x);
