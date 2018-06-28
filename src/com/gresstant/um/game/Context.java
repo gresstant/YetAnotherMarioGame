@@ -29,9 +29,9 @@ public class Context {
      * 重力加速度。
      * 单位为 px/s² (像素每平方秒)
      */
-    public final double gravity = 384.0;
+    public final double gravity = 768.0;
 
-    public final double maxFallSpeed = 192.0;
+    public final double maxFallSpeed = 384.0;
 
     public Runnable exitCallback;
 
@@ -91,7 +91,7 @@ public class Context {
      */
     public double marioMaxRunSpeed = 128.0;
 
-    public double marioJumpSpeed = -128.0;
+    public double marioJumpSpeed = -192.0;
 
     /**
      * 马里奥的基准摩擦力

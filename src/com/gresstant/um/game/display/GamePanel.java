@@ -338,6 +338,7 @@ public class GamePanel extends JPanel {
                         setState(GameState.IN_GAME);
                         break;
                     } else if (timeElapsed > 10000) {
+                        playerLife = 3;
                         setState(GameState.START_SCREEN);
                         break;
                     }
