@@ -4,7 +4,7 @@ import com.gresstant.um.game.Context;
 
 import java.awt.image.BufferedImage;
 
-public class CoinHelper extends BackgroundAdapter {
+public class CoinHelper extends BackgroundTemplate {
     private EntityState state = EntityState.FROZEN;
     private Context context;
     private int timer = 0;

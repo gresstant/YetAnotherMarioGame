@@ -12,7 +12,7 @@ import java.util.function.Supplier;
  * 其实感觉还可以进一步抽象
  * 但是现在没有这个需求所以还是这样吧
  */
-public class RMFJudger extends EnemyAdapter {
+public class RMFJudger extends EnemyTemplate {
     Supplier<Mario> marioSupplier;
     Consumer<IEntity> addEntityLater;
 

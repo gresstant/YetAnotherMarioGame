@@ -4,7 +4,7 @@ import com.gresstant.um.game.Context;
 
 import java.awt.image.BufferedImage;
 
-public class Bullet extends EnemyAdapter {
+public class Bullet extends EnemyTemplate {
     public Bullet(Context context, double x, double y, double speed) {
         super(context, speed);
         height = 16.0;

@@ -4,7 +4,7 @@ import com.gresstant.um.game.Context;
 
 import java.awt.image.BufferedImage;
 
-public class Flower extends EnemyAdapter {
+public class Flower extends EnemyTemplate {
     private BufferedImage imgBuffer;
 
     public Flower(Context context, double x, double y) {

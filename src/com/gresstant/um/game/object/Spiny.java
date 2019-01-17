@@ -4,7 +4,7 @@ import com.gresstant.um.game.Context;
 
 import java.awt.image.BufferedImage;
 
-public class Spiny extends EnemyAdapter {
+public class Spiny extends EnemyTemplate {
     public Spiny(Context context, double x, double y) {
         super(context, 16.0);
         height = 16.0;

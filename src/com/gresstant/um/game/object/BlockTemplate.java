@@ -1,6 +1,6 @@
 package com.gresstant.um.game.object;
 
-public abstract class BlockAdapter extends EntityAdapter implements IBlock {
+public abstract class BlockTemplate extends EntityTemplate implements IBlock {
     @Override public void activate() {
         setState(EntityState.STILL);
     }

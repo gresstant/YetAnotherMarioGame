@@ -1,11 +1,10 @@
 package com.gresstant.um.game.object;
 
 import com.gresstant.um.game.Context;
-import com.gresstant.um.game.map.MapBase;
 
 import java.awt.image.BufferedImage;
 
-public class Goomba extends EnemyAdapter {
+public class Goomba extends EnemyTemplate {
     public Goomba(Context context, double x, double y) {
         super(context, 16.0);
         height = 16.0;

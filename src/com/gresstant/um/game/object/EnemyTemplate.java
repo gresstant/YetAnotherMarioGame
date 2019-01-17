@@ -2,7 +2,7 @@ package com.gresstant.um.game.object;
 
 import com.gresstant.um.game.Context;
 
-public abstract class EnemyAdapter extends EntityAdapter implements IEnemy {
+public abstract class EnemyTemplate extends EntityTemplate implements IEnemy {
     protected EntityState state = EntityState.FROZEN;
 
     protected boolean topSupported = false;
@@ -13,7 +13,7 @@ public abstract class EnemyAdapter extends EntityAdapter implements IEnemy {
     protected double speedX, speedY;
     protected Context context;
 
-    protected EnemyAdapter(Context context, double speedX) {
+    protected EnemyTemplate(Context context, double speedX) {
         this.context = context;
         this.speedX = -Math.abs(speedX);
     }

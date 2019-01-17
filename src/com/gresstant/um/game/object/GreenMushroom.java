@@ -4,7 +4,7 @@ import com.gresstant.um.game.Context;
 
 import java.awt.image.BufferedImage;
 
-public class GreenMushroom extends EnemyAdapter {
+public class GreenMushroom extends EnemyTemplate {
     private BufferedImage imgBuffer;
     private Runnable callback;
 

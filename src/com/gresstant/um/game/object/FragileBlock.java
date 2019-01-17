@@ -8,7 +8,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
-public class FragileBlock extends BlockAdapter {
+public class FragileBlock extends BlockTemplate {
     private Context context;
     private EntityState state = EntityState.FROZEN;
     /**

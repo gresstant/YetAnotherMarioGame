@@ -2,7 +2,7 @@ package com.gresstant.um.game.object;
 
 import java.awt.image.BufferedImage;
 
-public abstract class EntityAdapter implements IEntity {
+public abstract class EntityTemplate implements IEntity {
     /**
      * 根据对其方式所设定的对齐点
      */

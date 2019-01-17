@@ -4,7 +4,7 @@ import com.gresstant.um.game.Context;
 
 import java.awt.image.BufferedImage;
 
-public class Mario extends EntityAdapter {
+public class Mario extends EntityTemplate {
     private Context context;
     private EntityState state = EntityState.FROZEN;
 

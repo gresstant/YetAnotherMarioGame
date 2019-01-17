@@ -5,7 +5,7 @@ import com.gresstant.um.game.Context;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-public class GroundBlock extends BlockAdapter {
+public class GroundBlock extends BlockTemplate {
     private EntityState state = EntityState.FROZEN;
     private BufferedImage imgBuffer;
 

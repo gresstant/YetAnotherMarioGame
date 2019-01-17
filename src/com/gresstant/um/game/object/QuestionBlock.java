@@ -2,12 +2,11 @@ package com.gresstant.um.game.object;
 
 import com.gresstant.um.game.Context;
 
-import java.awt.*;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.function.*;
 
-public class QuestionBlock extends BlockAdapter {
+public class QuestionBlock extends BlockTemplate {
     private EntityState state = EntityState.FROZEN;
     private BufferedImage[] imgBuffer;
     private Consumer<IEntity> callback;

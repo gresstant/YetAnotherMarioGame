@@ -2,7 +2,7 @@ package com.gresstant.um.game.object;
 
 import java.awt.image.BufferedImage;
 
-public class NullObject extends BackgroundAdapter {
+public class NullObject extends BackgroundTemplate {
     private EntityState state = EntityState.FROZEN;
 
     public NullObject() {

@@ -1,6 +1,6 @@
 package com.gresstant.um.game.object;
 
-public abstract class BackgroundAdapter extends BlockAdapter {
+public abstract class BackgroundTemplate extends BlockTemplate {
     @Override public boolean collideUpwards(boolean[] keyArray, IEntity entity) {
         return false;
     }
